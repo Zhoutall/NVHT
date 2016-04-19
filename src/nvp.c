@@ -165,7 +165,7 @@ void nvalloc_init(int h_nvid, int heap_size) {
 		}
 		int *magic_ptr = (int *)heap_base_addr;
 		if (*magic_ptr != HEAP_MAGIC) {
-			printf("HEAP_MAGIC error!\n");
+			printf("NV ALLOC HEAP MAGIC error!\n");
 			exit(EXIT_FAILURE);
 		}
 //		printf("heap_base_addr: %p\n", heap_base_addr);

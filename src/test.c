@@ -9,6 +9,7 @@
 #include "nvp.h"
 #include "util.h"
 #include "nvht.h"
+#include "nvlogger.h"
 
 void nvsim_test1() {
 	int nvid = 1234;
@@ -208,6 +209,23 @@ void nvht_clear() {
 	nv_remove(12345);
 }
 
+void nvlogger_test1() {
+	struct nvl_header *nvlh = nvl_init(9966, 0);
+	char data1[] = "hello data111";
+	nvl_append(nvlh, data1, sizeof(data1));
+	char data2[] = "hello data22223332";
+	nvl_append(nvlh, data2, sizeof(data2));
+	struct nvl_record *it = nvl_begin(nvlh);
+	while (it != NULL) {
+		printf("%s\n", it->data);
+		it = nvl_next(nvlh, it);
+	}
+}
+
+void nvlogger_clear() {
+	nv_remove(9966);
+}
+
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		return -1;
@@ -238,6 +256,10 @@ int main(int argc, char *argv[]) {
 		nvht_test2();
 	} else if (strcmp(argv[1], "nvht_c") == 0) {
 		nvht_clear();
+	} else if (strcmp(argv[1], "nvl1") == 0) {
+		nvlogger_test1();
+	} else if (strcmp(argv[1], "nvl_c") == 0) {
+		nvlogger_clear();
 	} else {
 		printf("No test for %s\n", argv[1]);
 	}
