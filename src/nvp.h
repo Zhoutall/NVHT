@@ -49,7 +49,7 @@ void free_nvp(struct nvp_t *nvp);
  */
 void nvalloc_init(int h_nvid, int size);
 struct nvp_t nvalloc_malloc(int size);
-inline void *nvalloc_getnvp(struct nvp_t *nvp);
+void *nvalloc_getnvp(struct nvp_t *nvp);
 void nvalloc_free(struct nvp_t *nvp);
 /*
  * create nvp and full with data (raw data, so that no pointer)

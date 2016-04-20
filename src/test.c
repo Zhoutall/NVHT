@@ -226,6 +226,45 @@ void nvlogger_clear() {
 	nv_remove(9966);
 }
 
+void nvtxn_test1() {
+	nvalloc_init(12345, 0);
+	struct nvl_header *nvlh = nvl_get(9966, 0);
+	struct nvp_t nvp_a = alloc_nvp(77677, 4096);
+	char *buf_a = get_nvp(&nvp_a);
+	strcpy(buf_a, "buf_a status 1");
+	struct nvp_t nvp_b = nvalloc_malloc(40);
+	char *buf_b = nvalloc_getnvp(&nvp_b);
+	strcpy(buf_b, "buf_b status 11");
+
+	struct nvtxn_info txn = nvtxn_start(nvlh);
+	nvtxn_record_data_update(&txn, NV_DATASET, nvp_a, 0, buf_a, 4096);
+	strcpy(buf_a, "buf_a new status 2");
+	printf("%s\n", buf_a);
+	nvtxn_record_data_update(&txn, NVHT_PUT, nvp_b, 0, buf_b, 40);
+	strcpy(buf_b, "buf_b new status 22");
+	printf("%s\n", buf_b);
+//	nvtxn_commit(&txn);
+	nvtxn_recover(nvlh);
+	printf("%s\n", buf_a);
+	printf("%s\n", buf_b);
+}
+
+void nvtxn_test2() {
+	struct nvl_header *nvlh = nvl_get(9966, 0);
+	struct nvtxn_info txn = nvtxn_start(nvlh);
+	nvtxn_record_nv_update(&txn, NV_ALLOC, 77677);
+	struct nvp_t nvp_a = alloc_nvp(77677, 4096);
+//	nvtxn_commit(&txn);
+	nvtxn_recover(nvlh);
+	nv_remove(9966);
+}
+
+void nvtxn_clear() {
+	nv_remove(9966);
+	nv_remove(77677);
+	nv_remove(12345);
+}
+
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		return -1;
@@ -260,6 +299,12 @@ int main(int argc, char *argv[]) {
 		nvlogger_test1();
 	} else if (strcmp(argv[1], "nvl_c") == 0) {
 		nvlogger_clear();
+	} else if (strcmp(argv[1], "nvtxn1") == 0) {
+		nvtxn_test1();
+	} else if (strcmp(argv[1], "nvtxn2") == 0) {
+		nvtxn_test2();
+	} else if (strcmp(argv[1], "nvtxn_c") == 0) {
+		nvtxn_clear();
 	} else {
 		printf("No test for %s\n", argv[1]);
 	}

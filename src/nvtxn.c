@@ -74,8 +74,12 @@ void nvtxn_recover(struct nvl_header *nvlh) {
 		char *data = logs[i]->data;
 		d = (struct nvtxn_record_header *)data;
 		char *addr;
-		if (d->op == NVHT_PUT || d->op == NVHT_REMOVE || d->op == NV_HEAP_BITMAP_UPDATE) {
+		if (d->op == NVHT_PUT || d->op == NVHT_REMOVE) {
 			addr = nvalloc_getnvp(&d->nvp);
+			addr += d->offset;
+			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
+		} else if (d->op == NV_HEAP_BITMAP_UPDATE || d->op == NV_DATASET) {
+			addr = get_nvp(&d->nvp);
 			addr += d->offset;
 			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
 		} else if (d->op == NV_ALLOC) {

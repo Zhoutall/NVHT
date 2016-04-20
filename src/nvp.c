@@ -241,7 +241,7 @@ struct nvp_t nvalloc_malloc(int size) {
 	return nvp;
 }
 
-inline void *nvalloc_getnvp(struct nvp_t *nvp) {
+void *nvalloc_getnvp(struct nvp_t *nvp) {
 	assert(heap_base_addr != 0);
 	if (nvp == NULL) {
 		printf("%s: NULL argument\n", __func__);
