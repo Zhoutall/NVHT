@@ -13,8 +13,8 @@ int nvl_header_valid(struct nvl_header *h) {
 	return h->magic0 == NVLOGGER_MAGIC_0;
 }
 
-struct nvl_header *nvl_init(int nvid, int size) {
-	struct nvl_header *nvlogger_addr = 0;
+struct nvl_header *nvl_get(int nvid, int size) {
+	struct nvl_header *nvlogger_addr;
 	if (nv_exist(nvid) != -1) {
 		nvlogger_addr = nvpcache_search(nvid);
 		if (nvlogger_addr == NULL) {
@@ -39,7 +39,7 @@ struct nvl_header *nvl_init(int nvid, int size) {
 	return nvlogger_addr;
 }
 
-void nvl_append(struct nvl_header *nvl, char *data, int dsize) {
+void nvl_append(struct nvl_header *nvl, void *data, int dsize) {
 	int realsize = sizeof(struct nvl_record) + dsize + sizeof(int);
 	/*
 	 * check memory enough

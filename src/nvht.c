@@ -3,6 +3,7 @@
 #include "nvht.h"
 #include "nvp.h"
 #include "util.h"
+#include "nvlogger.h"
 
 static inline int nvht_elem_size(int capacity) {
 	return sizeof(struct nvht_element) * capacity;
@@ -31,6 +32,7 @@ struct nvp_t nvht_init(int nvid) {
 
 		struct nvht_header *h = get_nvp(&ret);
 		void *elem_addr = get_nvp(&h->elem_nvp);
+		struct nvl_header *nvlh = nvl_get(h->log_nvid, 0);
 		return ret;
 	}
 	// create a new one
@@ -44,6 +46,9 @@ struct nvp_t nvht_init(int nvid) {
 	void *elem_addr = get_nvp(&nvht_elem_nvp);
 	memset(header_addr, 0, NVHT_HEADER_SIZE);
 	memset(elem_addr, 0, elem_size);
+	// init log region
+	int log_nvid = random_nvid();
+	struct nvl_header *nvlh = nvl_get(log_nvid, 0);
 
 	struct nvht_header *header = (struct nvht_header *)header_addr;
 	header->capacity = INIT_CAPACITY;
@@ -52,6 +57,7 @@ struct nvp_t nvht_init(int nvid) {
 	header->elem_nvp.nvid = elem_nvid;
 	header->elem_nvp.nvoffset = 0;
 	header->elem_nvp.size = elem_size;
+	header->log_nvid = log_nvid;
 	return nvht_header_nvp;
 }
 

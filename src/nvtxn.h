@@ -17,6 +17,10 @@
 typedef enum {
 	NVHT_PUT,
 	NVHT_REMOVE,
+	NVHT_FREE, /* TODO */
+	NV_ALLOC,
+	NV_FREE,
+	NV_HEAP_BITMAP_UPDATE,
 	COMMIT
 } NVTXN_OP_T;
 
@@ -25,6 +29,9 @@ struct nvtxn_info {
 	struct nvl_header *nvlh;
 };
 
+/*
+ * for multiple usage
+ */
 struct nvtxn_record_header {
 	int txn_id;
 	NVTXN_OP_T op;
@@ -38,6 +45,7 @@ struct nvtxn_record_header {
  */
 struct nvtxn_info nvtxn_start(struct nvl_header *nvlh);
 
+void nvtxn_record_nv_update(struct nvtxn_info *txn, NVTXN_OP_T op, int nvid);
 /*
  * arguments:
  * 	txn: transaction infomation
@@ -47,7 +55,8 @@ struct nvtxn_info nvtxn_start(struct nvl_header *nvlh);
  * 	undodata: undo data
  * 	dsize: undodata size
  */
-void nvtxn_record(struct nvtxn_info *txn, NVTXN_OP_T op, struct nvp_t nvp, int offset, void *undodata, int dsize);
+void nvtxn_record_data_update(struct nvtxn_info *txn, NVTXN_OP_T op,
+		struct nvp_t nvp, int offset, void *undodata, int dsize);
 
 void nvtxn_commit(struct nvtxn_info *txn);
 

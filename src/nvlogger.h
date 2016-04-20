@@ -39,11 +39,11 @@ int nvl_header_valid(struct nvl_header *h);
 /*
  * re-attach or alloc nvlogger space
  */
-struct nvl_header *nvl_init(int nvid, int size);
+struct nvl_header *nvl_get(int nvid, int size);
 /*
  * data should be end with NVLOGGER_MAGIC_2
  */
-void nvl_append(struct nvl_header *nvl, char *data, int dsize);
+void nvl_append(struct nvl_header *nvl, void *data, int dsize);
 void nvl_reset(struct nvl_header *nvl);
 /*
  * iterator for nvlogger

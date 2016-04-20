@@ -12,7 +12,6 @@ void *nv_get(int nvid, int size) {
 		size = PAGE_SIZE;
 	}
 	key_t k = ftok(PATHNAME, nvid);
-//	printf("%s nvid %d k %d\n", __func__, nvid, k);
 	if (k==-1) {
 		perror("ftok");
 		exit(EXIT_FAILURE);
@@ -32,7 +31,6 @@ void *nv_get(int nvid, int size) {
 
 void *nv_attach(int nvid) {
 	key_t k = ftok(PATHNAME, nvid);
-//	printf("%s nvid %d k %d\n", __func__, nvid, k);
 	if (k==-1) {
 		perror("ftok");
 		exit(EXIT_FAILURE);
@@ -61,15 +59,14 @@ int nv_detach(void *nvaddr) {
 
 int nv_remove(int nvid) {
 	key_t k = ftok(PATHNAME, nvid);
-//	printf("%s nvid %d k %d\n", __func__, nvid, k);
 	if (k==-1) {
 		perror("ftok");
 		exit(EXIT_FAILURE);
 	}
 	int shmid = shmget(k, 0, 0);
 	if (shmid == -1) {
-		perror("shmget");
-		exit(EXIT_FAILURE);
+		// has been removed
+		return 0;
 	}
 	int ret = shmctl(shmid, IPC_RMID, 0);
 	if (ret == -1) {

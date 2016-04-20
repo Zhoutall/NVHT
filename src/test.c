@@ -10,6 +10,7 @@
 #include "util.h"
 #include "nvht.h"
 #include "nvlogger.h"
+#include "nvtxn.h"
 
 void nvsim_test1() {
 	int nvid = 1234;
@@ -206,7 +207,7 @@ void nvht_clear() {
 }
 
 void nvlogger_test1() {
-	struct nvl_header *nvlh = nvl_init(9966, 0);
+	struct nvl_header *nvlh = nvl_get(9966, 0);
 	char data1[] = "OP1#hello data#111";
 	nvl_append(nvlh, data1, sizeof(data1));
 	char data2[] = "OP2#hello data#222";

@@ -28,7 +28,7 @@ struct nvht_header {
 	int size;
 	int head_nvid;
 	struct nvp_t elem_nvp;
-//	int log_nvid;
+	int log_nvid;
 	/* not used now. In future, it can be used as a overflow array */
 	struct nvht_element data[0];
 };
