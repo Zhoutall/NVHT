@@ -9,5 +9,5 @@ unsigned int hash_string(char* keystring, int len);
 unsigned int hash_integer(unsigned long key);
 
 int random_nvid();
-
+int random_txnid();
 #endif

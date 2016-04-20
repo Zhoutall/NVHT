@@ -1,12 +1,16 @@
-#include "nvlogger.h"
-#include "nvp.h"
-#include "nvsim.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "nvlogger.h"
+#include "nvp.h"
+#include "nvsim.h"
 
 static int get_nvlogger_size(struct nvl_header *h) {
 	return h->size + sizeof(struct nvl_header);
+}
+
+int nvl_header_valid(struct nvl_header *h) {
+	return h->magic0 == NVLOGGER_MAGIC_0;
 }
 
 struct nvl_header *nvl_init(int nvid, int size) {
@@ -83,6 +87,7 @@ struct nvl_record *nvl_next(struct nvl_header *nvl, struct nvl_record *now) {
 	if (next->magic1 != NVLOGGER_MAGIC_1)
 		return NULL;
 	int *magic2 = (int *) (next->data + next->len);
+	// cannot find magic2 means crash when writing log
 	if (*magic2 != NVLOGGER_MAGIC_2)
 		return NULL;
 	return next;

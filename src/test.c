@@ -159,15 +159,11 @@ void nvht_test1() {
 		char v[20];
 		sprintf(k, "nv key %d", i);
 		sprintf(v, "nv value %d", i*i);
-		nvht_put(ht_nvp,
-				make_nvp_withdata(k, strlen(k)+1),
-				make_nvp_withdata(v, strlen(v)+1));
+		nvht_put(ht_nvp, k, strlen(k)+1, v, strlen(v)+1);
 	}
 	char k1[] = "key 1";
 	char v1[] = "value 1";
-	struct nvp_t k_nvp1 = make_nvp_withdata(k1, sizeof(k1));
-	struct nvp_t v_nvp1 = make_nvp_withdata(v1, sizeof(v1));
-	nvht_put(ht_nvp, k_nvp1, v_nvp1);
+	nvht_put(ht_nvp, k1, sizeof(k1), v1, sizeof(v1));
 	printf("--------\n");
 	i = 0;
 	while (++i < 10000) {
@@ -211,13 +207,16 @@ void nvht_clear() {
 
 void nvlogger_test1() {
 	struct nvl_header *nvlh = nvl_init(9966, 0);
-	char data1[] = "hello data111";
+	char data1[] = "OP1#hello data#111";
 	nvl_append(nvlh, data1, sizeof(data1));
-	char data2[] = "hello data22223332";
+	char data2[] = "OP2#hello data#222";
 	nvl_append(nvlh, data2, sizeof(data2));
 	struct nvl_record *it = nvl_begin(nvlh);
 	while (it != NULL) {
-		printf("%s\n", it->data);
+		char tmp[10];
+		int a, b;
+		sscanf(it->data, "OP%d#%[^#]#%d", &b, tmp, &a);
+		printf("%s OP %d %d\n", tmp, b, a);
 		it = nvl_next(nvlh, it);
 	}
 }

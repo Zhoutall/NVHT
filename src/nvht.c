@@ -31,7 +31,6 @@ struct nvp_t nvht_init(int nvid) {
 
 		struct nvht_header *h = get_nvp(&ret);
 		void *elem_addr = get_nvp(&h->elem_nvp);
-
 		return ret;
 	}
 	// create a new one
@@ -39,7 +38,6 @@ struct nvp_t nvht_init(int nvid) {
 
 	int elem_size = nvht_elem_size(INIT_CAPACITY);
 	int elem_nvid = random_nvid();
-//	printf("elem_nvid: %d\n", elem_nvid);
 	struct nvp_t nvht_elem_nvp = alloc_nvp(elem_nvid, elem_size);
 
 	void *header_addr = get_nvp(&nvht_header_nvp);
@@ -67,7 +65,6 @@ static int nvht_hashindex(struct nvp_t nvht_p, char *k_str, int ksize) {
 		return MAP_FULL;
 	/* Find the best index */
 	int curr = hash_string(k_str, ksize) % (h->capacity);
-//	printf("%s curr %d\n", __func__, curr);
 	/* Linear probing */
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
@@ -82,13 +79,11 @@ static int nvht_hashindex(struct nvp_t nvht_p, char *k_str, int ksize) {
 			}
 		}
 		curr = (curr + 1) % (h->capacity);
-//		printf("%s probing curr %d\n", __func__, curr);
 	}
 	return MAP_FULL;
 }
 
 static int nvht_rehash(struct nvp_t nvht_p) {
-//	printf("%s START REHASH\n", __func__);
 	struct nvht_header *h = get_nvp(&nvht_p);
 	struct nvht_element *e = get_nvp(&h->elem_nvp);
 
@@ -99,7 +94,6 @@ static int nvht_rehash(struct nvp_t nvht_p) {
 	// alloc mem
 	int elem_size = nvht_elem_size(new_capacity);
 	int elem_nvid = random_nvid();
-//	printf("elem_nvid: %d\n", elem_nvid);
 	struct nvp_t new_e_nvp = alloc_nvp(elem_nvid, elem_size);
 	void *new_elem_addr = get_nvp(&new_e_nvp);
 	memset(new_elem_addr, 0, elem_size);
@@ -114,14 +108,17 @@ static int nvht_rehash(struct nvp_t nvht_p) {
 	for (i=0; i<old_capacity; ++i) {
 		if (e[i].use == 0)
 			continue;
-		nvht_put(nvht_p, e[i].key, e[i].value);
+		_nvht_put(nvht_p, e[i].key, e[i].value);
 	}
 	free_nvp(&tmp);
-//	printf("%s END REHASH\n", __func__);
 	return MAP_OK;
 }
 
-void nvht_put(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v) {
+void nvht_put(struct nvp_t nvht_p, char *kstr, int ksize, char *vstr, int vsize) {
+	_nvht_put(nvht_p, make_nvp_withdata(kstr, ksize), make_nvp_withdata(vstr, vsize));
+}
+
+void _nvht_put(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v) {
 	struct nvht_header *h = get_nvp(&nvht_p);
 	struct nvht_element *e = get_nvp(&h->elem_nvp);
 	char *k_str = nvalloc_getnvp(&k);
@@ -130,8 +127,7 @@ void nvht_put(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v) {
 		nvht_rehash(nvht_p);
 		index = nvht_hashindex(nvht_p, k_str, k.size);
 	}
-//	printf("Put k %s in index %d\n", k_str, index);
-	// fix bug: e should be get by get_nvp again
+	// e should be get by get_nvp again
 	e = get_nvp(&h->elem_nvp);
 	e[index].key = k;
 	e[index].value = v;
@@ -144,7 +140,6 @@ struct nvp_t *nvht_get(struct nvp_t nvht_p, char *k_str, int ksize) {
 	struct nvht_header *h = get_nvp(&nvht_p);
 	struct nvht_element *e = get_nvp(&h->elem_nvp);
 	int index = hash_string(k_str, ksize) % (h->capacity);
-//	printf("%s, index %d\n", __func__, index);
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
 		int use = e[index].use;
@@ -155,7 +150,6 @@ struct nvp_t *nvht_get(struct nvp_t nvht_p, char *k_str, int ksize) {
 			}
 		}
 		index = (index + 1) % (h->capacity);
-//		printf("%s, probing index %d\n", __func__, index);
 	}
 	return NULL;
 }
@@ -172,6 +166,9 @@ int nvht_remove(struct nvp_t nvht_p, char *k_str, int ksize) {
 			if (strncmp(k_str, curr_k_str, ksize) == 0) {
 				e[index].use = 0;
 				h->size -= 1;
+				// free nvp
+				nvalloc_free(&e[index].key);
+				nvalloc_free(&e[index].value);
 				return MAP_OK;
 			}
 		}
@@ -182,7 +179,6 @@ int nvht_remove(struct nvp_t nvht_p, char *k_str, int ksize) {
 
 void nvht_free(struct nvp_t nvht_p) {
 	struct nvht_header *h = get_nvp(&nvht_p);
-//	printf("%s elem_nvid %d\n", __func__, h->elem_nvp.nvid);
 	free_nvp(&h->elem_nvp);
 	free_nvp(&nvht_p);
 }

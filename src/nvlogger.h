@@ -33,6 +33,10 @@ struct nvl_record {
 };
 
 /*
+ * chech magic number for header
+ */
+int nvl_header_valid(struct nvl_header *h);
+/*
  * re-attach or alloc nvlogger space
  */
 struct nvl_header *nvl_init(int nvid, int size);

@@ -163,3 +163,11 @@ int random_nvid() {
 	while((r = rand()) < RANDOM_NVID_MIN) {}
 	return r;
 }
+
+int random_txnid() {
+	if (dosrand == 0) {
+		dosrand = 1;
+		srand(time(NULL));
+	}
+	return rand() % 10000;
+}

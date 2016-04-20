@@ -45,7 +45,6 @@ int nvpcache_insert(int _nvid, int offset, int size, void *addr) {
 static int nvpcache_insert_rb(struct rb_root *root, struct nvpitem *_nvpitem) {
     struct rb_node **new = &(root->rb_node), *parent = NULL;
     int _nvid = _nvpitem->nvp.nvid;
-//    printf("%s nvid %d\n", __func__, _nvid);
     while (*new) {
         struct nvpitem *this = container_of(*new, struct nvpitem, node);
         parent = *new;
@@ -102,7 +101,6 @@ void *get_nvp(struct nvp_t *nvp) {
 
 void free_nvp(struct nvp_t *nvp) {
 	// TODO check nvid exist in shm
-//	printf("%s nvid %d\n", __func__, nvp->nvid);
 	void *vaddr = nvpcache_search(nvp->nvid);
 	if (vaddr != NULL) {
 		nvpcache_delete(nvp->nvid);
@@ -168,7 +166,6 @@ void nvalloc_init(int h_nvid, int heap_size) {
 			printf("NV ALLOC HEAP MAGIC error!\n");
 			exit(EXIT_FAILURE);
 		}
-//		printf("heap_base_addr: %p\n", heap_base_addr);
 		return;
 	}
 	if (heap_size < HEAP_SIZE_MIN) {
@@ -178,7 +175,6 @@ void nvalloc_init(int h_nvid, int heap_size) {
 	// nvpcache
 	nvpcache_insert(h_nvid, 0, heap_size, heap_base_addr);
 
-//	printf("heap_base_addr: %p\n", heap_base_addr);
 	int *go_ptr = (int *)heap_base_addr;
 	*go_ptr = HEAP_MAGIC;
 	++go_ptr;
@@ -203,10 +199,8 @@ struct nvp_t nvalloc_malloc(int size) {
 	}
 	int total_chunk_num = get_bitmap_bits();
 	char *bitmap_addr = get_bitmap_addr();
-//	printf("heap_base_addr %p, bitmap_addr %p\n", heap_base_addr, bitmap_addr);
 	int res_index = -1;
 	int i, j;
-//	printf("total_chunk_num %d, chunk_num %d\n", total_chunk_num, chunk_num);
 	for (i = 0; i <= (total_chunk_num - chunk_num); ++i) {
 		for (j = 0; j < chunk_num; ++j) {
 			int index = i + j;
@@ -232,14 +226,12 @@ struct nvp_t nvalloc_malloc(int size) {
 		printf("heap memory not enough\n");
 		exit(EXIT_FAILURE);
 	}
-//	printf("res_index %d, chunk_num %d\n", res_index, chunk_num);
 	// set bitmap to 1
 	for (j=0; j<chunk_num; ++j) {
 		int index = res_index + j;
 		int seg = index / 8;
 		int offset = index % 8;
 		bitmap_addr[seg] |= (0x1 << (7-offset));
-//		printf("seg %d, offset %d, bitmap %x\n", seg, offset, (unsigned char)bitmap_addr[seg]);
 	}
 	// return nvp
 	struct nvp_t nvp;
