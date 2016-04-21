@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
+#include <unistd.h>
 #include "nvsim.h"
 #include "list.h"
 #include "nvp.h"
@@ -146,6 +147,11 @@ void util_test() {
 		printf("random int: %d, k: %d\n", r, ftok("/tmp", r));
 		++i;
 	}
+
+	long long t1 = ustime();
+	sleep(1);
+	long long t2 = ustime();
+	printf("time diff %lld\n", t2 - t1);
 }
 
 void nvht_txn_test() {

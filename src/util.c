@@ -2,6 +2,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
+ #include <sys/time.h>
 #include "util.h"
 
 /* The implementation here was originally done by Gary S. Brown.  I have
@@ -170,4 +171,24 @@ int random_txnid() {
 		srand(time(NULL));
 	}
 	return rand() % 10000;
+}
+
+long long ustime(void) {
+    struct timeval tv;
+    long long ust;
+
+    gettimeofday(&tv, NULL);
+    ust = ((long)tv.tv_sec)*1000000;
+    ust += tv.tv_usec;
+    return ust;
+}
+
+long long mstime(void) {
+    struct timeval tv;
+    long long mst;
+
+    gettimeofday(&tv, NULL);
+    mst = ((long long)tv.tv_sec)*1000;
+    mst += tv.tv_usec/1000;
+    return mst;
 }
