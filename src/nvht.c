@@ -91,7 +91,7 @@ static int nvht_hashindex(struct nvp_t nvht_p, char *k_str, int ksize) {
 	return MAP_FULL;
 }
 
-static int nvht_rehash(struct nvp_t nvht_p) {
+int nvht_rehash(struct nvp_t nvht_p) {
 	struct nvht_header *h = get_nvp(&nvht_p);
 	struct nvht_element *e = get_nvp(&h->elem_nvp);
 

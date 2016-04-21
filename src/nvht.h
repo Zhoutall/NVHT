@@ -45,6 +45,7 @@ int nvht_size(struct nvp_t nvht_p);
 void print_nvht_image(struct nvp_t nvht_p);
 
 static void _nvht_rehash_move(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v);
+int nvht_rehash(struct nvp_t nvht_p); /* non-static for test */
 
 #endif
 

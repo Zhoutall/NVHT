@@ -84,6 +84,8 @@ struct nvl_record *nvl_next(struct nvl_header *nvl, struct nvl_record *now) {
 	}
 	struct nvl_record *next = (struct nvl_record *) ((char *) now
 			+ sizeof(struct nvl_record) + now->len + sizeof(int));
+	if ((void *)next >= (void *)(nvl->buffer+nvl->w_offset))
+		return NULL;
 	if (next->magic1 != NVLOGGER_MAGIC_1)
 		return NULL;
 	int *magic2 = (int *) (next->data + next->len);

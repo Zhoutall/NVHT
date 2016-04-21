@@ -148,6 +148,53 @@ void util_test() {
 	}
 }
 
+void nvht_txn_test() {
+	nvalloc_init(12345, 6000000); // 6M
+	struct nvp_t ht_nvp = nvht_init(9988);
+	struct nvht_header *h = get_nvp(&ht_nvp);
+	printf("size: %d %d\n", h->size,  h->capacity);
+	int i = 0;
+	while (++i < 10) {
+		char k[20];
+		char v[20];
+		sprintf(k, "nv key %d", i);
+		sprintf(v, "nv value %d", i * i);
+		nvht_put(ht_nvp, k, strlen(k) + 1, v, strlen(v) + 1);
+	}
+
+//	nvht_rehash(ht_nvp);
+//	i = 0;
+//	printf("--------\n");
+//	while (++i < 10) {
+//		char k[20];
+//		sprintf(k, "nv key %d", i);
+//		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
+//		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
+//	}
+//	printf("size: %d %d\n", h->size, h->capacity);
+//
+//	return; /*****/
+
+	printf("size: %d\n", h->size);
+	i = 0;
+	printf("--------\n");
+	while (++i < 10) {
+		char k[20];
+		sprintf(k, "nv key %d", i);
+		nvht_remove(ht_nvp, k, strlen(k) + 1);
+	}
+	printf("size: %d\n", h->size);
+	i = 0;
+	printf("--------\n");
+	while (++i < 10) {
+		char k[20];
+		sprintf(k, "nv key %d", i);
+		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
+		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
+	}
+	printf("size: %d\n", h->size);
+}
+
 void nvht_test1() {
 	nvalloc_init(12345, 6000000); // 6M
 	struct nvp_t ht_nvp = nvht_init(9988);
@@ -305,6 +352,8 @@ int main(int argc, char *argv[]) {
 		nvtxn_test2();
 	} else if (strcmp(argv[1], "nvtxn_c") == 0) {
 		nvtxn_clear();
+	} else if (strcmp(argv[1], "nvht_txn") == 0) {
+		nvht_txn_test();
 	} else {
 		printf("No test for %s\n", argv[1]);
 	}
