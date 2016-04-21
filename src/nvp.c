@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "nvp.h"
 #include "nvsim.h"
+#include "nvtxn.h"
 
 static struct rb_root nvpcache_root = RB_ROOT;
 
@@ -187,6 +188,15 @@ void nvalloc_init(int h_nvid, int heap_size) {
 	return;
 }
 
+struct nvp_t txn_nvalloc_malloc(struct nvtxn_info *txn, int size) {
+	struct nvp_t hnvp;
+	hnvp.nvid = get_heap_nvid();
+	hnvp.nvoffset = 0;
+	hnvp.size = get_heap_size();
+	nvtxn_record_data_update(txn, NV_HEAP_BITMAP_UPDATE, hnvp, 3 * sizeof(int), get_bitmap_addr(), get_bitmap_bits()/8);
+	return nvalloc_malloc(size);
+}
+
 struct nvp_t nvalloc_malloc(int size) {
 	assert(heap_base_addr != 0);
 
@@ -250,6 +260,15 @@ void *nvalloc_getnvp(struct nvp_t *nvp) {
 	return get_data_addr() + nvp->nvoffset;
 }
 
+void txn_nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp) {
+	struct nvp_t hnvp;
+	hnvp.nvid = get_heap_nvid();
+	hnvp.nvoffset = 0;
+	hnvp.size = get_heap_size();
+	nvtxn_record_data_update(txn, NV_HEAP_BITMAP_UPDATE, hnvp, 3 * sizeof(int), get_bitmap_addr(), get_bitmap_bits()/8);
+	nvalloc_free(nvp);
+}
+
 void nvalloc_free(struct nvp_t *nvp) {
 	assert(heap_base_addr != 0);
 
@@ -268,6 +287,15 @@ void nvalloc_free(struct nvp_t *nvp) {
 		int offset = index % 8;
 		bitmap_addr[seg] &= ~(0x1 << (7 - offset));
 	}
+}
+
+struct nvp_t txn_make_nvp_withdata(struct nvtxn_info *txn, void *d, int dsize) {
+	assert(heap_base_addr != 0);
+
+	struct nvp_t d_nvp = txn_nvalloc_malloc(txn, dsize);
+	void *d_nv = nvalloc_getnvp(&d_nvp);
+	memcpy(d_nv, d, dsize);
+	return d_nvp;
 }
 
 struct nvp_t make_nvp_withdata(void *d, int dsize) {

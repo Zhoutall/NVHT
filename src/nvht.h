@@ -38,15 +38,13 @@ struct nvht_header {
  */
 struct nvp_t nvht_init(int nvid);
 void nvht_put(struct nvp_t nvht_p, char *kstr, int ksize, char *vstr, int vsize);
-/*
- * inner function for nvht_put
- */
-void _nvht_put(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v);
 struct nvp_t *nvht_get(struct nvp_t nvht_p, char *k_str, int ksize);
 int nvht_remove(struct nvp_t nvht_p, char *k_str, int ksize);
 void nvht_free(struct nvp_t nvht_p);
 int nvht_size(struct nvp_t nvht_p);
 void print_nvht_image(struct nvp_t nvht_p);
+
+static void _nvht_rehash_move(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v);
 
 #endif
 

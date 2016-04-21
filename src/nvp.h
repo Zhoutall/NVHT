@@ -5,6 +5,9 @@
 #define __NVP_H__
 
 #include "rbtree.h"
+#include "nvtxn.h"
+
+struct nvtxn_info;
 
 // this can be stored in NVM
 struct nvp_t{
@@ -48,11 +51,14 @@ void free_nvp(struct nvp_t *nvp);
  * size: heap size
  */
 void nvalloc_init(int h_nvid, int size);
+struct nvp_t txn_nvalloc_malloc(struct nvtxn_info *txn, int size);
 struct nvp_t nvalloc_malloc(int size);
 void *nvalloc_getnvp(struct nvp_t *nvp);
+void txn_nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp);
 void nvalloc_free(struct nvp_t *nvp);
 /*
  * create nvp and full with data (raw data, so that no pointer)
  */
+struct nvp_t txn_make_nvp_withdata(struct nvtxn_info *txn, void *d, int dsize);
 struct nvp_t make_nvp_withdata(void *d, int dsize);
 #endif

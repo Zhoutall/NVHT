@@ -155,7 +155,7 @@ void nvht_test1() {
 	printf("capacity: %d\n", h->capacity);
 	// try put many data
 	int i=0;
-	while (++i < 10000) {
+	while (++i < 300) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
@@ -167,7 +167,7 @@ void nvht_test1() {
 	nvht_put(ht_nvp, k1, sizeof(k1), v1, sizeof(v1));
 	printf("--------\n");
 	i = 0;
-	while (++i < 10000) {
+	while (++i < 300) {
 		char k[20];
 		sprintf(k, "nv key %d", i);
 		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
@@ -188,7 +188,7 @@ void nvht_test2() {
 	printf("Must NULL %d\n", res == NULL);
 	printf("capacity: %d\n", h->capacity);
 	int i = 0;
-	while (++i < 10000) {
+	while (++i < 300) {
 		char k[20];
 		sprintf(k, "nv key %d", i);
 		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k)+1);

@@ -5,6 +5,14 @@
 #include "util.h"
 #include "nvsim.h"
 
+static struct nvp_t nvp_parse(struct nvtxn_record_header *h) {
+	struct nvp_t ret;
+	ret.nvid = h->nvp.nvid;
+	ret.nvoffset = h->nvp.nvoffset;
+	ret.size = h->nvp.size;
+	return ret;
+}
+
 struct nvtxn_info nvtxn_start(struct nvl_header *nvlh) {
 	// check nvl_header valid
 	if (!nvl_header_valid(nvlh)) {
@@ -31,7 +39,9 @@ void nvtxn_record_data_update(struct nvtxn_info *txn, NVTXN_OP_T op,
 	struct nvtxn_record_header rh;
 	rh.txn_id = txn->txn_id;
 	rh.op = op;
-	rh.nvp = nvp;
+	rh.nvp.nvid = nvp.nvid;
+	rh.nvp.nvoffset = nvp.nvoffset;
+	rh.nvp.size = nvp.size;
 	rh.offset = offset;
 	rh.dsize = dsize;
 	memcpy(buffer, &rh, sizeof(struct nvtxn_record_header));
@@ -74,12 +84,15 @@ void nvtxn_recover(struct nvl_header *nvlh) {
 		char *data = logs[i]->data;
 		d = (struct nvtxn_record_header *)data;
 		char *addr;
-		if (d->op == NVHT_PUT || d->op == NVHT_REMOVE) {
-			addr = nvalloc_getnvp(&d->nvp);
+		if (d->op == NV_HEAP_DATA) {
+			struct nvp_t tmp = nvp_parse(d);
+			addr = nvalloc_getnvp(&tmp);
 			addr += d->offset;
 			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
-		} else if (d->op == NV_HEAP_BITMAP_UPDATE || d->op == NV_DATASET) {
-			addr = get_nvp(&d->nvp);
+		} else if (d->op == NVHT_HEADER || d->op == NVHT_PUT || d->op == NVHT_REMOVE ||
+				d->op == NV_HEAP_BITMAP_UPDATE || d->op == NV_DATASET) {
+			struct nvp_t tmp = nvp_parse(d);
+			addr = get_nvp(&tmp);
 			addr += d->offset;
 			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
 		} else if (d->op == NV_ALLOC) {

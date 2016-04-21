@@ -4,6 +4,8 @@
 #include "nvlogger.h"
 #include "nvp.h"
 
+struct nvp_t;
+
 /*
  * trasaction module
  * undo log, record the old value of a nvp
@@ -15,12 +17,14 @@
  * op will write to log, so this enum only support append (keep index unchanged)
  */
 typedef enum {
+	NVHT_HEADER,
 	NVHT_PUT,
 	NVHT_REMOVE,
 	NVHT_FREE, /* TODO */
 	NV_ALLOC,
 	NV_FREE,
 	NV_DATASET,
+	NV_HEAP_DATA,
 	NV_HEAP_BITMAP_UPDATE,
 	COMMIT
 } NVTXN_OP_T;
@@ -36,7 +40,11 @@ struct nvtxn_info {
 struct nvtxn_record_header {
 	int txn_id;
 	NVTXN_OP_T op;
-	struct nvp_t nvp;
+	struct {
+	    int nvid;
+	    int nvoffset;
+	    int size;
+	} nvp;
 	int offset;
 	int dsize;
 };
