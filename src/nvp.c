@@ -111,6 +111,7 @@ void free_nvp(struct nvp_t *nvp) {
 
 /*
  * nv_allocator
+ * TODO: bitmap + object pool
  */
 
 static void *heap_base_addr = 0;

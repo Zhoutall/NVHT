@@ -39,6 +39,29 @@ struct nvl_header *nvl_get(int nvid, int size) {
 	return nvlogger_addr;
 }
 
+/*
+ * nvl_append with data header (for txn header)
+ */
+void nvl_txn_append(struct nvl_header *nvl, void *data_header, int dhsize, void *data, int dsize) {
+	int realsize = sizeof(struct nvl_record) + dhsize + dsize + sizeof(int);
+	/*
+	 * check memory enough
+	 */
+	if (nvl->size - nvl->w_offset < realsize) {
+		printf("NVLOGGER space not enough\n");
+		exit(EXIT_FAILURE);
+	}
+	struct nvl_record *pos = (struct nvl_record *) (nvl->buffer + nvl->w_offset);
+	pos->magic1 = NVLOGGER_MAGIC_1;
+	pos->len = dhsize + dsize;
+	memcpy(pos->data, data_header, dhsize);
+	memcpy(pos->data + dhsize, data, dsize);
+	int *magic2 = (int *) (pos->data + dhsize + dsize);
+	*magic2 = NVLOGGER_MAGIC_2;
+	/* finish append */
+	nvl->w_offset += realsize;
+}
+
 void nvl_append(struct nvl_header *nvl, void *data, int dsize) {
 	int realsize = sizeof(struct nvl_record) + dsize + sizeof(int);
 	/*

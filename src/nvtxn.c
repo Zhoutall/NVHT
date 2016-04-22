@@ -26,28 +26,26 @@ struct nvtxn_info nvtxn_start(struct nvl_header *nvlh) {
 }
 
 void nvtxn_record_nv_update(struct nvtxn_info *txn, NVTXN_OP_T op, int nvid) {
-	struct nvtxn_record_header rh;
-	rh.txn_id = txn->txn_id;
-	rh.op = op;
-	rh.nvp.nvid = nvid;
+	struct nvtxn_record_header rh = {
+		.txn_id = txn->txn_id,
+		.op = op,
+		.nvp.nvid = nvid
+	};
 	nvl_append(txn->nvlh, &rh, sizeof(struct nvtxn_record_header));
 }
 
 void nvtxn_record_data_update(struct nvtxn_info *txn, NVTXN_OP_T op,
 		struct nvp_t nvp, int offset, void *undodata, int dsize) {
-	void *buffer = malloc(sizeof(struct nvtxn_record_header) + dsize);
-	struct nvtxn_record_header rh;
-	rh.txn_id = txn->txn_id;
-	rh.op = op;
-	rh.nvp.nvid = nvp.nvid;
-	rh.nvp.nvoffset = nvp.nvoffset;
-	rh.nvp.size = nvp.size;
-	rh.offset = offset;
-	rh.dsize = dsize;
-	memcpy(buffer, &rh, sizeof(struct nvtxn_record_header));
-	memcpy(buffer + sizeof(struct nvtxn_record_header), undodata, dsize);
-	nvl_append(txn->nvlh, buffer, sizeof(struct nvtxn_record_header) + dsize);
-	free(buffer);
+	struct nvtxn_record_header rh = {
+		.txn_id = txn->txn_id,
+		.op = op,
+		.nvp.nvid = nvp.nvid,
+		.nvp.nvoffset = nvp.nvoffset,
+		.nvp.size = nvp.size,
+		.offset = offset,
+		.dsize = dsize
+	};
+	nvl_txn_append(txn->nvlh, &rh, sizeof(struct nvtxn_record_header), undodata, dsize);
 }
 
 void nvtxn_commit(struct nvtxn_info *txn) {
