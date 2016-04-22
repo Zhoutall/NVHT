@@ -114,6 +114,7 @@ void free_nvp(struct nvp_t *nvp) {
  */
 
 static void *heap_base_addr = 0;
+static int hintindex = 0;
 
 #define HEAP_SIZE_MIN 131072 // 128kB
 #define HEAP_CHUNK_SIZE 128 // 128B per chunk
@@ -211,7 +212,7 @@ struct nvp_t nvalloc_malloc(int size) {
 	char *bitmap_addr = get_bitmap_addr();
 	int res_index = -1;
 	int i, j;
-	for (i = 0; i <= (total_chunk_num - chunk_num); ++i) {
+	for (i = hintindex; i <= (total_chunk_num - chunk_num); ++i) {
 		for (j = 0; j < chunk_num; ++j) {
 			int index = i + j;
 			int seg = index / 8;
@@ -236,6 +237,7 @@ struct nvp_t nvalloc_malloc(int size) {
 		printf("heap memory not enough\n");
 		exit(EXIT_FAILURE);
 	}
+	hintindex = res_index;
 	// set bitmap to 1
 	for (j=0; j<chunk_num; ++j) {
 		int index = res_index + j;

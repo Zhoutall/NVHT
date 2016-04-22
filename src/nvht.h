@@ -15,7 +15,7 @@
 #define MAX_CHAIN_LENGTH 16
 
 #define NVHT_HEADER_SIZE 4096
-#define INIT_CAPACITY 256
+#define INIT_CAPACITY 4096
 
 struct nvht_element {
 	struct nvp_t key;
@@ -24,28 +24,31 @@ struct nvht_element {
 };
 
 struct nvht_header {
+	/* persistent data */
 	int capacity;
 	int size;
 	int head_nvid;
 	struct nvp_t elem_nvp;
 	int log_nvid;
+	/* runtime data */
+	struct nvht_element *elem_ptr;
+	struct nvl_header *log_ptr;
 	/* not used now. In future, it can be used as a overflow array */
-	struct nvht_element data[0];
+	char data[0];
 };
 
 /*
  * nvid here is used for nvht header
  */
-struct nvp_t nvht_init(int nvid);
-void nvht_put(struct nvp_t nvht_p, char *kstr, int ksize, char *vstr, int vsize);
-struct nvp_t *nvht_get(struct nvp_t nvht_p, char *k_str, int ksize);
-int nvht_remove(struct nvp_t nvht_p, char *k_str, int ksize);
-void nvht_free(struct nvp_t nvht_p);
-int nvht_size(struct nvp_t nvht_p);
-void print_nvht_image(struct nvp_t nvht_p);
+struct nvht_header *nvht_init(int nvid);
+void nvht_put(struct nvht_header *h, char *kstr, int ksize, char *vstr, int vsize);
+int nvht_get(struct nvht_header *h, char *k_str, int ksize, char *retvalue);
+int nvht_remove(struct nvht_header *h, char *k_str, int ksize);
+void nvht_free(struct nvht_header *h);
+void print_nvht_image(struct nvht_header *h);
 
-static void _nvht_rehash_move(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v);
-int nvht_rehash(struct nvp_t nvht_p); /* non-static for test */
+static void _nvht_rehash_move(struct nvht_header *h, struct nvp_t k, struct nvp_t v);
+int nvht_rehash(struct nvht_header *h); /* non-static for test */
 
 #endif
 

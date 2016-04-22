@@ -10,6 +10,14 @@ static inline int nvht_elem_size(int capacity) {
 	return sizeof(struct nvht_element) * capacity;
 }
 
+static struct nvp_t gen_nvht_nvp(int nvid) {
+	struct nvp_t ret;
+	ret.nvid = nvid;
+	ret.nvoffset = 0; // no offset for nvht memory
+	ret.size = NVHT_HEADER_SIZE;
+	return ret;
+}
+
 /*
  * Init a new nvht
  *
@@ -19,23 +27,20 @@ static inline int nvht_elem_size(int capacity) {
  *
  * this function should attach these two nv region
  */
-struct nvp_t nvht_init(int nvid) {
+struct nvht_header *nvht_init(int nvid) {
 	if (nv_exist(nvid) != -1) {
 		// map the exist nvht
 		struct nvpitem *item = nvpcache_search_foritem(nvid);
 		if (item != NULL) {
-			return item->nvp;
+			return get_nvp(&item->nvp);
 		}
-		struct nvp_t ret;
-		ret.nvid = nvid;
-		ret.nvoffset = 0; // no offset for nvht memory
-		ret.size = NVHT_HEADER_SIZE;
-
-		struct nvht_header *h = get_nvp(&ret);
-		void *elem_addr = get_nvp(&h->elem_nvp);
-		struct nvl_header *nvlh = nvl_get(h->log_nvid, 0);
-		nvtxn_recover(nvlh);
-		return ret;
+		struct nvp_t nvht_nvp = gen_nvht_nvp(nvid);
+		struct nvht_header *h = get_nvp(&nvht_nvp);
+		h->log_ptr = nvl_get(h->log_nvid, 0);
+		nvtxn_recover(h->log_ptr);
+		/* init nvht_header runtime data (elem_ptr must init after recover) */
+		h->elem_ptr = get_nvp(&h->elem_nvp);
+		return h;
 	}
 	// create a new one
 	struct nvp_t nvht_header_nvp = alloc_nvp(nvid, NVHT_HEADER_SIZE);
@@ -60,15 +65,16 @@ struct nvp_t nvht_init(int nvid) {
 	header->elem_nvp.nvoffset = 0;
 	header->elem_nvp.size = elem_size;
 	header->log_nvid = log_nvid;
-	return nvht_header_nvp;
+	header->elem_ptr = (struct nvht_element *)elem_addr;
+	header->log_ptr = nvlh;
+	return header;
 }
 
 /*
  * get the hash index for k
  */
-static int nvht_hashindex(struct nvp_t nvht_p, char *k_str, int ksize) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
+static int nvht_hashindex(struct nvht_header *h, char *k_str, int ksize) {
+	struct nvht_element *e = h->elem_ptr;
 	if (h->size >= (h->capacity / 2))
 		return MAP_FULL;
 	/* Find the best index */
@@ -82,7 +88,7 @@ static int nvht_hashindex(struct nvp_t nvht_p, char *k_str, int ksize) {
 			struct nvp_t curr_k = e[curr].key;
 			char *curr_k_str = nvalloc_getnvp(&curr_k);
 			if (curr_k.size == ksize
-					&& (strncmp(k_str, curr_k_str, ksize) == 0)) {
+					&& (memcmp(k_str, curr_k_str, ksize) == 0)) {
 				return curr;
 			}
 		}
@@ -91,12 +97,11 @@ static int nvht_hashindex(struct nvp_t nvht_p, char *k_str, int ksize) {
 	return MAP_FULL;
 }
 
-int nvht_rehash(struct nvp_t nvht_p) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
+int nvht_rehash(struct nvht_header *h) {
+	struct nvht_element *e = h->elem_ptr;
 
-	struct nvtxn_info txn = nvtxn_start(nvl_get(h->log_nvid, 0));
-	struct nvp_t tmp = h->elem_nvp;
+	struct nvtxn_info txn = nvtxn_start(h->log_ptr);
+	struct nvp_t old_elem_nvp = h->elem_nvp;
 
 	int old_capacity = h->capacity;
 	int new_capacity = old_capacity * 2;
@@ -109,38 +114,36 @@ int nvht_rehash(struct nvp_t nvht_p) {
 	void *new_elem_addr = get_nvp(&new_e_nvp);
 	memset(new_elem_addr, 0, elem_size);
 
-	nvtxn_record_data_update(&txn, NVHT_HEADER, nvht_p, 0, h,
+	nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h,
 				sizeof(struct nvht_header));
 	h->capacity = new_capacity;
 	h->size = 0;
 	h->elem_nvp.nvid = elem_nvid;
 	h->elem_nvp.nvoffset = 0;
 	h->elem_nvp.size = elem_size;
+	h->elem_ptr = new_elem_addr;
 
 	// do the rehash one by one
 	int i;
 	for (i=0; i<old_capacity; ++i) {
 		if (e[i].use == 0)
 			continue;
-		_nvht_rehash_move(nvht_p, e[i].key, e[i].value);
+		_nvht_rehash_move(h, e[i].key, e[i].value);
 	}
 	nvtxn_commit(&txn);
-	free_nvp(&tmp);
+	free_nvp(&old_elem_nvp);
 	return MAP_OK;
 }
 
-static void _nvht_rehash_move(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t v) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
+static void _nvht_rehash_move(struct nvht_header *h, struct nvp_t k, struct nvp_t v) {
 	char *k_str = nvalloc_getnvp(&k);
-	int index = nvht_hashindex(nvht_p, k_str, k.size);
+	int index = nvht_hashindex(h, k_str, k.size);
 	while (index == MAP_FULL) {
 		printf("Bad hash function.\n");
-		nvht_rehash(nvht_p);
-		index = nvht_hashindex(nvht_p, k_str, k.size);
+		nvht_rehash(h);
+		index = nvht_hashindex(h, k_str, k.size);
 	}
-	// e should be get by get_nvp again
-	e = get_nvp(&h->elem_nvp);
+	struct nvht_element *e = h->elem_ptr;
 	e[index].key = k;
 	e[index].value = v;
 	e[index].use = 1;
@@ -148,18 +151,16 @@ static void _nvht_rehash_move(struct nvp_t nvht_p, struct nvp_t k, struct nvp_t 
 	return;
 }
 
-void nvht_put(struct nvp_t nvht_p, char *kstr, int ksize, char *vstr, int vsize) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
-	int index = nvht_hashindex(nvht_p, kstr, ksize);
+void nvht_put(struct nvht_header *h, char *kstr, int ksize, char *vstr, int vsize) {
+	int index = nvht_hashindex(h, kstr, ksize);
 	while (index == MAP_FULL) {
-		nvht_rehash(nvht_p);
-		index = nvht_hashindex(nvht_p, kstr, ksize);
+		nvht_rehash(h);
+		index = nvht_hashindex(h, kstr, ksize);
 	}
 	struct nvtxn_info txn = nvtxn_start(nvl_get(h->log_nvid, 0));
 	struct nvp_t v = txn_make_nvp_withdata(&txn, vstr, vsize);
-	// e should be get by get_nvp again
-	e = get_nvp(&h->elem_nvp);
+
+	struct nvht_element *e = h->elem_ptr;
 	// free old value if key exists (do a replace)
 	if (e[index].use == 1) {
 		struct nvp_t oldv_nvp = e[index].value;
@@ -176,7 +177,7 @@ void nvht_put(struct nvp_t nvht_p, char *kstr, int ksize, char *vstr, int vsize)
 		e[index].key = k;
 		e[index].value = v;
 		e[index].use = 1;
-		nvtxn_record_data_update(&txn, NVHT_HEADER, nvht_p, 0, h,
+		nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h,
 				sizeof(struct nvht_header));
 		h->size += 1;
 	}
@@ -184,39 +185,40 @@ void nvht_put(struct nvp_t nvht_p, char *kstr, int ksize, char *vstr, int vsize)
 	return;
 }
 
-struct nvp_t *nvht_get(struct nvp_t nvht_p, char *k_str, int ksize) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
+int nvht_get(struct nvht_header *h, char *k_str, int ksize, char *retvalue) {
+	if (retvalue == NULL)
+		return -1;
+	struct nvht_element *e = h->elem_ptr;
 	int index = hash_string(k_str, ksize) % (h->capacity);
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
 		int use = e[index].use;
 		if (use == 1) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
-			if (strncmp(k_str, curr_k_str, ksize) == 0) {
-				return &e[index].value;
+			if (memcmp(k_str, curr_k_str, ksize) == 0) {
+				memcpy(retvalue, nvalloc_getnvp(&e[index].value), e[index].value.size);
+				return 0;
 			}
 		}
 		index = (index + 1) % (h->capacity);
 	}
-	return NULL;
+	return -1;
 }
 
-int nvht_remove(struct nvp_t nvht_p, char *k_str, int ksize) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
-	int index = nvht_hashindex(nvht_p, k_str, ksize);
+int nvht_remove(struct nvht_header *h, char *k_str, int ksize) {
+	struct nvht_element *e = h->elem_ptr;
+	int index = nvht_hashindex(h, k_str, ksize);
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
 		int use = e[index].use;
 		if (use == 1) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
-			if (strncmp(k_str, curr_k_str, ksize) == 0) {
+			if (memcmp(k_str, curr_k_str, ksize) == 0) {
 				struct nvtxn_info txn = nvtxn_start(nvl_get(h->log_nvid, 0));
 				nvtxn_record_data_update(&txn, NVHT_REMOVE, h->elem_nvp,
 						index * sizeof(struct nvht_element), e + index, sizeof(struct nvht_element));
 				e[index].use = 0;
-				nvtxn_record_data_update(&txn, NVHT_HEADER, nvht_p, 0, h, sizeof(struct nvht_header));
+				nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h, sizeof(struct nvht_header));
 				h->size -= 1;
 				// free nvp
 				txn_nvalloc_free(&txn, &e[index].key);
@@ -230,21 +232,15 @@ int nvht_remove(struct nvp_t nvht_p, char *k_str, int ksize) {
 	return MAP_MISSING;
 }
 
-void nvht_free(struct nvp_t nvht_p) {
-	struct nvht_header *h = get_nvp(&nvht_p);
+void nvht_free(struct nvht_header *h) {
 	free_nvp(&h->elem_nvp);
 	nv_remove(h->log_nvid);
-	free_nvp(&nvht_p);
+	struct nvp_t nvht_nvp = gen_nvht_nvp(h->head_nvid);
+	free_nvp(&nvht_nvp);
 }
 
-int nvht_size(struct nvp_t nvht_p) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	return h->size;
-}
-
-void print_nvht_image(struct nvp_t nvht_p) {
-	struct nvht_header *h = get_nvp(&nvht_p);
-	struct nvht_element *e = get_nvp(&h->elem_nvp);
+void print_nvht_image(struct nvht_header *h) {
+	struct nvht_element *e = h->elem_ptr;
 	int i;
 	printf("~~~~~\n");
 	for (i = 0; i < h->capacity; ++i) {

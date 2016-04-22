@@ -155,18 +155,18 @@ void util_test() {
 }
 
 void nvht_txn_test() {
-	nvalloc_init(12345, 6000000); // 6M
-	struct nvp_t ht_nvp = nvht_init(9988);
-	struct nvht_header *h = get_nvp(&ht_nvp);
-	printf("size: %d %d\n", h->size,  h->capacity);
-	int i = 0;
-	while (++i < 10) {
-		char k[20];
-		char v[20];
-		sprintf(k, "nv key %d", i);
-		sprintf(v, "nv value %d", i * i);
-		nvht_put(ht_nvp, k, strlen(k) + 1, v, strlen(v) + 1);
-	}
+//	nvalloc_init(12345, 6000000); // 6M
+//	struct nvp_t ht_nvp = nvht_init(9988);
+//	struct nvht_header *h = get_nvp(&ht_nvp);
+//	printf("size: %d %d\n", h->size,  h->capacity);
+//	int i = 0;
+//	while (++i < 10) {
+//		char k[20];
+//		char v[20];
+//		sprintf(k, "nv key %d", i);
+//		sprintf(v, "nv value %d", i * i);
+//		nvht_put(ht_nvp, k, strlen(k) + 1, v, strlen(v) + 1);
+//	}
 
 //	nvht_rehash(ht_nvp);
 //	i = 0;
@@ -181,73 +181,79 @@ void nvht_txn_test() {
 //
 //	return; /*****/
 
-	printf("size: %d\n", h->size);
-	i = 0;
-	printf("--------\n");
-	while (++i < 10) {
-		char k[20];
-		sprintf(k, "nv key %d", i);
-		nvht_remove(ht_nvp, k, strlen(k) + 1);
-	}
-	printf("size: %d\n", h->size);
-	i = 0;
-	printf("--------\n");
-	while (++i < 10) {
-		char k[20];
-		sprintf(k, "nv key %d", i);
-		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
-		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
-	}
-	printf("size: %d\n", h->size);
+//	printf("size: %d\n", h->size);
+//	i = 0;
+//	printf("--------\n");
+//	while (++i < 10) {
+//		char k[20];
+//		sprintf(k, "nv key %d", i);
+//		nvht_remove(ht_nvp, k, strlen(k) + 1);
+//	}
+//	printf("size: %d\n", h->size);
+//	i = 0;
+//	printf("--------\n");
+//	while (++i < 10) {
+//		char k[20];
+//		sprintf(k, "nv key %d", i);
+//		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
+//		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
+//	}
+//	printf("size: %d\n", h->size);
 }
 
 void nvht_test1() {
 	nvalloc_init(12345, 6000000); // 6M
-	struct nvp_t ht_nvp = nvht_init(9988);
-	struct nvht_header *h = get_nvp(&ht_nvp);
+	struct nvht_header *h = nvht_init(9988);
 	printf("capacity: %d\n", h->capacity);
 	// try put many data
 	int i=0;
-	while (++i < 300) {
+	long long t1 = ustime();
+	while (++i < 1000) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
-		sprintf(v, "nv value %d", i*i);
-		nvht_put(ht_nvp, k, strlen(k)+1, v, strlen(v)+1);
+		sprintf(v, "nv value %d", i * i);
+		nvht_put(h, k, strlen(k) + 1, v, strlen(v) + 1);
 	}
-	char k1[] = "key 1";
-	char v1[] = "value 1";
-	nvht_put(ht_nvp, k1, sizeof(k1), v1, sizeof(v1));
+	long long t2 = ustime();
+	printf("time diff %lld\n", t2 - t1);
 	printf("--------\n");
 	i = 0;
-	while (++i < 300) {
+	t1 = ustime();
+	while (++i < 1000) {
 		char k[20];
+		char v[20];
 		sprintf(k, "nv key %d", i);
-		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
-		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
+		int ret = nvht_get(h, k, strlen(k) + 1, v);
+		if (ret != 0) {
+			printf("nvht key not found\n");
+		}
+		printf("%s: %s\n", k, v);
 	}
+	t2 = ustime();
+	printf("time diff %lld\n", t2 - t1);
 }
 
 void nvht_test2() {
-	nvalloc_init(12345, 6000000);
-	struct nvp_t ht_nvp = nvht_init(9988);
-	struct nvht_header *h = get_nvp(&ht_nvp);
-	printf("capacity: %d\n", h->capacity);
-	char k1[] = "key 1";
-	struct nvp_t *res = nvht_get(ht_nvp, k1, sizeof(k1));
-	printf("Data: %s\n", (char *)nvalloc_getnvp(res));
-	nvht_remove(ht_nvp, k1, sizeof(k1));
-	res = nvht_get(ht_nvp, k1, sizeof(k1));
-	printf("Must NULL %d\n", res == NULL);
-	printf("capacity: %d\n", h->capacity);
-	int i = 0;
-	while (++i < 300) {
-		char k[20];
-		sprintf(k, "nv key %d", i);
-		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k)+1);
-		printf("%s: %s\n", k,
-				(char *) nvalloc_getnvp(tmp));
-	}
+//	nvalloc_init(12345, 6000000);
+//	struct nvp_t ht_nvp = nvht_init(9988);
+//	struct nvht_header *h = get_nvp(&ht_nvp);
+//	printf("capacity: %d\n", h->capacity);
+//	char k1[] = "key 1";
+//	struct nvp_t *res = nvht_get(ht_nvp, k1, sizeof(k1));
+//	printf("Data: %s\n", (char *)nvalloc_getnvp(res));
+//	nvht_remove(ht_nvp, k1, sizeof(k1));
+//	res = nvht_get(ht_nvp, k1, sizeof(k1));
+//	printf("Must NULL %d\n", res == NULL);
+//	printf("capacity: %d\n", h->capacity);
+//	int i = 0;
+//	while (++i < 300) {
+//		char k[20];
+//		sprintf(k, "nv key %d", i);
+//		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k)+1);
+//		printf("%s: %s\n", k,
+//				(char *) nvalloc_getnvp(tmp));
+//	}
 }
 
 void nvht_clear() {
@@ -255,7 +261,7 @@ void nvht_clear() {
 	tmp.nvid = 9988;
 	tmp.nvoffset = 0;
 	tmp.size = 0;
-	nvht_free(tmp);
+	nvht_free(get_nvp(&tmp));
 	nv_remove(12345);
 }
 
