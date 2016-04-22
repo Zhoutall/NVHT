@@ -2,7 +2,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
- #include <sys/time.h>
+#include <sys/time.h>
 #include "util.h"
 
 /* The implementation here was originally done by Gary S. Brown.  I have
