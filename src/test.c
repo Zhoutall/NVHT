@@ -208,7 +208,7 @@ void nvht_test1() {
 	// try put many data
 	int i=0;
 	long long t1 = ustime();
-	while (++i < 1000) {
+	while (++i < 10000) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
@@ -220,15 +220,11 @@ void nvht_test1() {
 	printf("--------\n");
 	i = 0;
 	t1 = ustime();
-	while (++i < 1000) {
+	while (++i < 10000) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
 		int ret = nvht_get(h, k, strlen(k) + 1, v);
-		if (ret != 0) {
-			printf("nvht key not found\n");
-		}
-		printf("%s: %s\n", k, v);
 	}
 	t2 = ustime();
 	printf("time diff %lld\n", t2 - t1);

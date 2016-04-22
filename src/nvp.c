@@ -212,12 +212,11 @@ struct nvp_t nvalloc_malloc(int size) {
 	char *bitmap_addr = get_bitmap_addr();
 	int res_index = -1;
 	int i, j;
+	// first fit from hintindex
 	for (i = hintindex; i <= (total_chunk_num - chunk_num); ++i) {
 		for (j = 0; j < chunk_num; ++j) {
 			int index = i + j;
-			int seg = index / 8;
-			int offset = index % 8;
-			int state = bitmap_addr[seg] & (0x1 << (7-offset));
+			int state = bitmap_addr[index / 8] & (0x1 << (7-index % 8));
 			if (state != 0) {
 				break;
 			} else {
@@ -232,19 +231,39 @@ struct nvp_t nvalloc_malloc(int size) {
 		}
 	}
 
+	// a total first fit (slow!!!!)
+	if (res_index == -1) {
+		hintindex = 0;
+		for (i = 0; i <= (total_chunk_num - chunk_num); ++i) {
+			for (j = 0; j < chunk_num; ++j) {
+				int index = i + j;
+				int state = bitmap_addr[index / 8] & (0x1 << (7 - index % 8));
+				if (state != 0) {
+					break;
+				} else {
+					if (j == (chunk_num - 1)) {
+						// find
+						res_index = i;
+					}
+				}
+			}
+			if (res_index != -1) {
+				break;
+			}
+		}
+	}
+
 	if (res_index == -1) {
 		// not find
 		printf("heap memory not enough\n");
 		exit(EXIT_FAILURE);
 	}
-	hintindex = res_index;
 	// set bitmap to 1
 	for (j=0; j<chunk_num; ++j) {
 		int index = res_index + j;
-		int seg = index / 8;
-		int offset = index % 8;
-		bitmap_addr[seg] |= (0x1 << (7-offset));
+		bitmap_addr[index / 8] |= (0x1 << (7-index % 8));
 	}
+	hintindex = res_index + chunk_num;
 	// return nvp
 	struct nvp_t nvp;
 	nvp.nvid = get_heap_nvid();
@@ -285,9 +304,7 @@ void nvalloc_free(struct nvp_t *nvp) {
 	int j;
 	for (j = 0; j < chunk_num; ++j) {
 		int index = res_index + j;
-		int seg = index / 8;
-		int offset = index % 8;
-		bitmap_addr[seg] &= ~(0x1 << (7 - offset));
+		bitmap_addr[index / 8] &= ~(0x1 << (7 - index % 8));
 	}
 }
 
