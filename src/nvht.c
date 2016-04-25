@@ -159,7 +159,6 @@ void nvht_put(struct nvht_header *h, char *kstr, int ksize, char *vstr, int vsiz
 	}
 	struct nvtxn_info txn = nvtxn_start(nvl_get(h->log_nvid, 0));
 	struct nvp_t v = txn_make_nvp_withdata(&txn, vstr, vsize);
-
 	struct nvht_element *e = h->elem_ptr;
 	// free old value if key exists (do a replace)
 	if (e[index].use == 1) {
@@ -177,8 +176,8 @@ void nvht_put(struct nvht_header *h, char *kstr, int ksize, char *vstr, int vsiz
 		e[index].key = k;
 		e[index].value = v;
 		e[index].use = 1;
-		nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h,
-				sizeof(struct nvht_header));
+//		nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h,
+//				sizeof(struct nvht_header));
 		h->size += 1;
 	}
 	nvtxn_commit(&txn);
@@ -234,7 +233,7 @@ int nvht_remove(struct nvht_header *h, char *k_str, int ksize) {
 
 void nvht_free(struct nvht_header *h) {
 	free_nvp(&h->elem_nvp);
-	nv_remove(h->log_nvid);
+	nvl_free(h->log_nvid);
 	struct nvp_t nvht_nvp = gen_nvht_nvp(h->head_nvid);
 	free_nvp(&nvht_nvp);
 }

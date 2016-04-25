@@ -39,6 +39,10 @@ struct nvl_header *nvl_get(int nvid, int size) {
 	return nvlogger_addr;
 }
 
+void nvl_free(int nvid) {
+	nv_remove(nvid);
+}
+
 /*
  * nvl_append with data header (for txn header)
  */

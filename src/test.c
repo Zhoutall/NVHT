@@ -12,6 +12,7 @@
 #include "nvht.h"
 #include "nvlogger.h"
 #include "nvtxn.h"
+#include "allocpool.h"
 
 void nvsim_test1() {
 	int nvid = 1234;
@@ -109,12 +110,12 @@ void nvalloc_test1() {
 	struct nvp_t nvp_a = alloc_nvp(77677, 4096);
 	struct testa_s *buf_a = get_nvp(&nvp_a);
 	nvalloc_init(12345, 0);
-	struct nvp_t nvp1 = nvalloc_malloc(10);
-	struct nvp_t nvp2 = nvalloc_malloc(300);
-	struct nvp_t nvp3 = nvalloc_malloc(300);
-	nvalloc_free(&nvp2);
-	struct nvp_t nvp4 = nvalloc_malloc(400);
-	struct nvp_t nvp5 = nvalloc_malloc(200);
+	struct nvp_t nvp1 = nvalloc_malloc(NULL, 10);
+	struct nvp_t nvp2 = nvalloc_malloc(NULL, 300);
+	struct nvp_t nvp3 = nvalloc_malloc(NULL, 300);
+	nvalloc_free(NULL, &nvp2);
+	struct nvp_t nvp4 = nvalloc_malloc(NULL, 400);
+	struct nvp_t nvp5 = nvalloc_malloc(NULL, 200);
 	char *addr = nvalloc_getnvp(&nvp4);
 	strcpy(addr, "This is data in nvalloc_malloc nvp4");
 	buf_a->data = 1234;
@@ -132,7 +133,7 @@ void nvalloc_test2() {
 	nvalloc_init(12345, 0);
 	char *addr = nvalloc_getnvp(&buf_a->nvp_test);
 	printf("nv region b: %p, data: %s\n", addr, addr);
-	struct nvp_t nvp_h = nvalloc_malloc(1000);
+	struct nvp_t nvp_h = nvalloc_malloc(NULL, 1000);
 }
 
 void nvalloc_clear() {
@@ -202,9 +203,27 @@ void nvht_txn_test() {
 }
 
 void nvht_test1() {
-	nvalloc_init(12345, 6000000); // 6M
+	nvalloc_init(12345, 6000000);
 	struct nvht_header *h = nvht_init(9988);
 	printf("capacity: %d\n", h->capacity);
+
+//	// Use rbtree cache will faster!
+//	long long ta = ustime();
+//	int j=0;
+//	while (++j < 1000) {
+//		nv_exist(9988);
+//	}
+//	long long tb = ustime();
+//	printf("time diff %lld\n", tb - ta);
+//	j = 0;
+//	ta = ustime();
+//	while (++j < 1000) {
+//		nvpcache_search(9988);
+//	}
+//	tb = ustime();
+//	printf("time diff %lld\n", tb - ta);
+//	return;
+
 	// try put many data
 	int i=0;
 	long long t1 = ustime();
@@ -231,25 +250,17 @@ void nvht_test1() {
 }
 
 void nvht_test2() {
-//	nvalloc_init(12345, 6000000);
-//	struct nvp_t ht_nvp = nvht_init(9988);
-//	struct nvht_header *h = get_nvp(&ht_nvp);
-//	printf("capacity: %d\n", h->capacity);
-//	char k1[] = "key 1";
-//	struct nvp_t *res = nvht_get(ht_nvp, k1, sizeof(k1));
-//	printf("Data: %s\n", (char *)nvalloc_getnvp(res));
-//	nvht_remove(ht_nvp, k1, sizeof(k1));
-//	res = nvht_get(ht_nvp, k1, sizeof(k1));
-//	printf("Must NULL %d\n", res == NULL);
-//	printf("capacity: %d\n", h->capacity);
-//	int i = 0;
-//	while (++i < 300) {
-//		char k[20];
-//		sprintf(k, "nv key %d", i);
-//		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k)+1);
-//		printf("%s: %s\n", k,
-//				(char *) nvalloc_getnvp(tmp));
-//	}
+	nvalloc_init(12345, 6000000);
+	struct nvht_header *h = nvht_init(9988);
+	printf("capacity: %d\n", h->capacity);
+	int i = 0;
+	while (++i < 300) {
+		char k[20];
+		char v[20];
+		sprintf(k, "nv key %d", i);
+		nvht_get(h, k, strlen(k)+1, v);
+		printf("%s: %s\n", k, v);
+	}
 }
 
 void nvht_clear() {
@@ -287,7 +298,7 @@ void nvtxn_test1() {
 	struct nvp_t nvp_a = alloc_nvp(77677, 4096);
 	char *buf_a = get_nvp(&nvp_a);
 	strcpy(buf_a, "buf_a status 1");
-	struct nvp_t nvp_b = nvalloc_malloc(40);
+	struct nvp_t nvp_b = nvalloc_malloc(NULL, 40);
 	char *buf_b = nvalloc_getnvp(&nvp_b);
 	strcpy(buf_b, "buf_b status 11");
 
@@ -317,6 +328,45 @@ void nvtxn_test2() {
 void nvtxn_clear() {
 	nv_remove(9966);
 	nv_remove(77677);
+	nv_remove(12345);
+}
+
+void pool_test() {
+	struct pool_t *p = pool_init(6*1024*1024/128);
+	int i;
+	long long t1, t2;
+	random_nvid();
+	t1 = ustime();
+	for (i = 0; i<10000; ++i) {
+		pool_alloc(NULL, p, random_nvid() % 4);
+	}
+	t2 = ustime();
+	printf("time diff %lld\n", t2 - t1);
+	pool_remove(p);
+	nvalloc_init(12345, 6*1024*1024);
+	t1 = ustime();
+	for (i = 0; i < 10000; ++i) {
+		nvalloc_malloc(NULL, random_nvid() % (128*4));
+	}
+	t2 = ustime();
+	printf("time diff %lld\n", t2 - t1);
+	nv_remove(12345);
+}
+
+void pool_test2() {
+	nvalloc_init(12345, 6*1024*1024);
+	int i;
+	struct nvp_t p[10000];
+	for (i = 0; i < 100; ++i) {
+		p[i] = nvalloc_malloc(NULL, random_nvid() % (1000));
+	}
+	for (i = 0; i < 100; ++i) {
+		nvalloc_free(NULL, &p[i]);
+	}
+	printf("---\n");
+	for (i = 0; i < 10; ++i) {
+		nvalloc_malloc(NULL, random_nvid() % (1000));
+	}
 	nv_remove(12345);
 }
 
@@ -362,6 +412,10 @@ int main(int argc, char *argv[]) {
 		nvtxn_clear();
 	} else if (strcmp(argv[1], "nvht_txn") == 0) {
 		nvht_txn_test();
+	} else if (strcmp(argv[1], "pool1") == 0) {
+		pool_test();
+	} else if (strcmp(argv[1], "pool2") == 0) {
+		pool_test2();
 	} else {
 		printf("No test for %s\n", argv[1]);
 	}

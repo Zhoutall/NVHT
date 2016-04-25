@@ -26,6 +26,7 @@ typedef enum {
 	NV_DATASET,
 	NV_HEAP_DATA,
 	NV_HEAP_BITMAP_UPDATE,
+	NV_HEAP_POOL_UPDATE,
 	COMMIT
 } NVTXN_OP_T;
 
@@ -53,6 +54,10 @@ struct nvtxn_record_header {
  * return a unique transaction id
  */
 struct nvtxn_info nvtxn_start(struct nvl_header *nvlh);
+
+/*
+ * for all these function, if txn is NULL, transaction is disabled
+ */
 
 void nvtxn_record_nv_update(struct nvtxn_info *txn, NVTXN_OP_T op, int nvid);
 /*

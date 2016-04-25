@@ -4,6 +4,7 @@
 #include "nvtxn.h"
 #include "util.h"
 #include "nvsim.h"
+#include "nvp.h"
 
 static struct nvp_t nvp_parse(struct nvtxn_record_header *h) {
 	struct nvp_t ret;
@@ -26,6 +27,9 @@ struct nvtxn_info nvtxn_start(struct nvl_header *nvlh) {
 }
 
 void nvtxn_record_nv_update(struct nvtxn_info *txn, NVTXN_OP_T op, int nvid) {
+	if (txn == NULL)
+		return;
+
 	struct nvtxn_record_header rh = {
 		.txn_id = txn->txn_id,
 		.op = op,
@@ -36,6 +40,9 @@ void nvtxn_record_nv_update(struct nvtxn_info *txn, NVTXN_OP_T op, int nvid) {
 
 void nvtxn_record_data_update(struct nvtxn_info *txn, NVTXN_OP_T op,
 		struct nvp_t nvp, int offset, void *undodata, int dsize) {
+	if (txn == NULL)
+		return;
+
 	struct nvtxn_record_header rh = {
 		.txn_id = txn->txn_id,
 		.op = op,
@@ -49,6 +56,9 @@ void nvtxn_record_data_update(struct nvtxn_info *txn, NVTXN_OP_T op,
 }
 
 void nvtxn_commit(struct nvtxn_info *txn) {
+	if (txn == NULL)
+		return;
+
 	struct nvtxn_record_header rh;
 	rh.txn_id = txn->txn_id;
 	rh.op = COMMIT;
@@ -93,6 +103,19 @@ void nvtxn_recover(struct nvl_header *nvlh) {
 			addr = get_nvp(&tmp);
 			addr += d->offset;
 			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
+		} else if (d->op == NV_HEAP_POOL_UPDATE) {
+//			struct nvp_t tmp = nvp_parse(d);
+//			addr = get_nvp(&tmp);
+//			addr += d->offset;
+#ifdef USEPOOL
+			struct pool_txn_record_t *pooldata = (struct pool_txn_record_t *)(data + sizeof(struct nvtxn_record_header));
+			pool_tree_recovery(pooldata);
+#else
+			struct nvp_t tmp = nvp_parse(d);
+			addr = get_nvp(&tmp);
+			addr += d->offset;
+			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
+#endif
 		} else if (d->op == NV_ALLOC) {
 			// free nvid
 			int nvid = d->nvp.nvid;

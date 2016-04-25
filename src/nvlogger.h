@@ -14,7 +14,7 @@
  * 	| meta-data | buffer region |
  */
 
-#define NVLOGGER_DEFAULT_SIZE 1048576
+#define NVLOGGER_DEFAULT_SIZE 1048576 // 1M
 #define NVLOGGER_MAGIC_0 0xB3333A55 /* header */
 #define NVLOGGER_MAGIC_1 0xB3CA5C3B /* record start */
 #define NVLOGGER_MAGIC_2 0xA1C1BCA1 /* record end */
@@ -40,6 +40,8 @@ int nvl_header_valid(struct nvl_header *h);
  * re-attach or alloc nvlogger space
  */
 struct nvl_header *nvl_get(int nvid, int size);
+
+void nvl_free(int nvid);
 /*
  * data should be end with NVLOGGER_MAGIC_2
  */
