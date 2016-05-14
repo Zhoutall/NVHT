@@ -12,10 +12,10 @@
 #define MAP_FULL -1 	/* nvht is full */
 #define MAP_OK 0 	/* OK */
 
-#define MAX_CHAIN_LENGTH 64
+#define MAX_CHAIN_LENGTH 128 /* set to be cacheline friendly */
 
 #define NVHT_HEADER_SIZE 4096
-#define INIT_CAPACITY 32768
+#define INIT_CAPACITY 4096
 
 struct nvht_element {
 	struct nvp_t key;

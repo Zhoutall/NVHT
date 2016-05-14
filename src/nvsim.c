@@ -7,7 +7,7 @@
 #define PATHNAME "/tmp"
 #define PAGE_SIZE 4096
 
-void *nv_get(int nvid, int size) {
+void *nv_get(int64_t nvid, int size) {
 	if (size < PAGE_SIZE) {
 		size = PAGE_SIZE;
 	}
@@ -18,25 +18,30 @@ void *nv_get(int nvid, int size) {
 	}
 	int shmid = shmget(k, size, 0777 | IPC_CREAT | IPC_EXCL);
 	if (shmid == -1) {
+//		printf("%s nvid %d\n", __func__, nvid);
 		perror("shmget");
 		exit(EXIT_FAILURE);
 	}
 	void *vaddr = shmat(shmid, 0, 0);
-	if (vaddr == (void *)(-1)) {
+	if (vaddr == (void *) (-1)) {
 		perror("shmat");
 		exit(EXIT_FAILURE);
 	}
 	return vaddr;
 }
 
-void *nv_attach(int nvid) {
+/*
+ * TODO: if attached, should return the previous address
+ */
+void *nv_map(int nvid) {
 	key_t k = ftok(PATHNAME, nvid);
-	if (k==-1) {
+	if (k == -1) {
 		perror("ftok");
 		exit(EXIT_FAILURE);
 	}
 	int shmid = shmget(k, 0, 0);
 	if (shmid == -1) {
+//		printf("%s nvid %d\n", __func__, nvid);
 		perror("shmget");
 		exit(EXIT_FAILURE);
 	}

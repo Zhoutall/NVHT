@@ -23,10 +23,9 @@ static struct nvpitem *nvpcache_search_rb(struct rb_root *root, int _nvid) {
     struct rb_node *node = root->rb_node;
     while (node) {
         struct nvpitem *data = container_of(node, struct nvpitem, node);
-        struct nvp_t *nvp_ptr = &data->nvp;
-        if (_nvid < nvp_ptr->nvid)
+        if (_nvid < data->nvid)
             node = node->rb_left;
-        else if (_nvid > nvp_ptr->nvid)
+        else if (_nvid > data->nvid)
             node = node->rb_right;
         else
             return data;
@@ -34,26 +33,22 @@ static struct nvpitem *nvpcache_search_rb(struct rb_root *root, int _nvid) {
     return NULL;
 }
 
-int nvpcache_insert(int _nvid, int offset, int size, void *addr) {
+int nvpcache_insert(int _nvid, void *addr) {
 	struct nvpitem *_nvpitem = malloc(sizeof(struct nvpitem));
-	struct nvp_t *nvp_ptr = &_nvpitem->nvp;
-	nvp_ptr->nvid = _nvid;
-	nvp_ptr->nvoffset = offset;
-	nvp_ptr->size = size;
+	_nvpitem->nvid = _nvid;
 	_nvpitem->vaddr = addr;
     return nvpcache_insert_rb(&nvpcache_root, _nvpitem);
 }
 
 static int nvpcache_insert_rb(struct rb_root *root, struct nvpitem *_nvpitem) {
     struct rb_node **new = &(root->rb_node), *parent = NULL;
-    int _nvid = _nvpitem->nvp.nvid;
+    int _nvid = _nvpitem->nvid;
     while (*new) {
         struct nvpitem *this = container_of(*new, struct nvpitem, node);
         parent = *new;
-        struct nvp_t *nvp_ptr = &this->nvp;
-        if (_nvid < nvp_ptr->nvid)
+        if (_nvid < this->nvid)
             new = &((*new)->rb_left);
-        else if (_nvid > nvp_ptr->nvid)
+        else if (_nvid > this->nvid)
             new = &((*new)->rb_right);
         else
             return -1;
@@ -78,7 +73,7 @@ static int nvpcache_delete_rb(struct rb_root *root, int _nvid) {
 struct nvp_t alloc_nvp(int _nvid, int size) {
 	// TODO check nvid not exist
 	void *vaddr = nv_get(_nvid, size);
-	nvpcache_insert(_nvid, 0, size, vaddr);
+	nvpcache_insert(_nvid, vaddr);
 	struct nvp_t nvp_ret;
 	nvp_ret.nvid = _nvid;
 	nvp_ret.nvoffset = 0;
@@ -94,11 +89,11 @@ void *get_nvp(struct nvp_t *nvp) {
 	// TODO check nvid exist in shm
 	void *vaddr = nvpcache_search(nvp->nvid);
 	if (vaddr != NULL) {
-		return vaddr;
+		return (char *)vaddr + nvp->nvoffset;
 	}
-	vaddr = nv_attach(nvp->nvid);
-	nvpcache_insert(nvp->nvid, nvp->nvoffset, nvp->size, vaddr);
-	return vaddr;
+	vaddr = nv_map(nvp->nvid);
+	nvpcache_insert(nvp->nvid, vaddr);
+	return (char *)vaddr + nvp->nvoffset;
 }
 
 void free_nvp(struct nvp_t *nvp) {
@@ -159,8 +154,8 @@ void nvalloc_init(int h_nvid, int heap_size) {
 		// nvpcache
 		heap_base_addr = nvpcache_search(h_nvid);
 		if (heap_base_addr == NULL) {
-			heap_base_addr = nv_attach(h_nvid);
-			nvpcache_insert(h_nvid, 0, get_heap_size(), heap_base_addr);
+			heap_base_addr = nv_map(h_nvid);
+			nvpcache_insert(h_nvid, heap_base_addr);
 		}
 		int *magic_ptr = (int *)heap_base_addr;
 		if (*magic_ptr != HEAP_MAGIC) {
@@ -188,7 +183,7 @@ void nvalloc_init(int h_nvid, int heap_size) {
 			+ (2 * sizeof(int) + HEAP_CHUNK_SIZE) * realsize;
 	heap_base_addr = nv_get(h_nvid, heap_size);
 	// nvpcache
-	nvpcache_insert(h_nvid, 0, heap_size, heap_base_addr);
+	nvpcache_insert(h_nvid, heap_base_addr);
 
 	int *go_ptr = (int *)heap_base_addr;
 	*go_ptr = HEAP_MAGIC;
@@ -407,8 +402,8 @@ void nvalloc_init(int h_nvid, int heap_size) {
 		// nvpcache
 		heap_base_addr = nvpcache_search(h_nvid);
 		if (heap_base_addr == NULL) {
-			heap_base_addr = nv_attach(h_nvid);
-			nvpcache_insert(h_nvid, 0, get_heap_size(), heap_base_addr);
+			heap_base_addr = nv_map(h_nvid);
+			nvpcache_insert(h_nvid, heap_base_addr);
 		}
 		int *magic_ptr = (int *)heap_base_addr;
 		if (*magic_ptr != HEAP_MAGIC) {
@@ -422,7 +417,7 @@ void nvalloc_init(int h_nvid, int heap_size) {
 	}
 	heap_base_addr = nv_get(h_nvid, heap_size);
 	// nvpcache
-	nvpcache_insert(h_nvid, 0, heap_size, heap_base_addr);
+	nvpcache_insert(h_nvid, heap_base_addr);
 
 	int *go_ptr = (int *)heap_base_addr;
 	*go_ptr = HEAP_MAGIC;

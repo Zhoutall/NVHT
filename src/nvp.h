@@ -20,7 +20,7 @@ struct nvp_t{
 // item in rbtree
 // item in DRAM
 struct nvpitem {
-    struct nvp_t nvp;
+    int nvid;
     void *vaddr;
     struct rb_node node; /* node in rbtree */
 };
@@ -38,7 +38,7 @@ struct pool_txn_record_t {
  */
 void *nvpcache_search(int _nvid);
 struct nvpitem *nvpcache_search_foritem(int _nvid);
-int nvpcache_insert(int _nvid, int offset, int size, void *addr);
+int nvpcache_insert(int _nvid, void *addr);
 int nvpcache_delete(int _nvid);
 static struct nvpitem *nvpcache_search_rb(struct rb_root *root, int _nvid);
 static int nvpcache_insert_rb(struct rb_root *root, struct nvpitem *_nvpitem);

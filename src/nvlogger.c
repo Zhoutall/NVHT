@@ -18,9 +18,8 @@ struct nvl_header *nvl_get(int nvid, int size) {
 	if (nv_exist(nvid) != -1) {
 		nvlogger_addr = nvpcache_search(nvid);
 		if (nvlogger_addr == NULL) {
-			nvlogger_addr = nv_attach(nvid);
-			nvpcache_insert(nvid, 0, get_nvlogger_size(nvlogger_addr),
-					nvlogger_addr);
+			nvlogger_addr = nv_map(nvid);
+			nvpcache_insert(nvid, nvlogger_addr);
 		}
 		if (nvlogger_addr->magic0 != NVLOGGER_MAGIC_0) {
 			printf("NVLOGGER header magic number error\n");
@@ -32,7 +31,7 @@ struct nvl_header *nvl_get(int nvid, int size) {
 		size = NVLOGGER_DEFAULT_SIZE;
 	}
 	nvlogger_addr = nv_get(nvid, size);
-	nvpcache_insert(nvid, 0, size, nvlogger_addr);
+	nvpcache_insert(nvid, nvlogger_addr);
 	nvlogger_addr->magic0 = NVLOGGER_MAGIC_0;
 	nvlogger_addr->size = size - sizeof(struct nvl_header);
 	nvlogger_addr->w_offset = 0;

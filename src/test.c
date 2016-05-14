@@ -24,7 +24,7 @@ void nvsim_test1() {
 
 void nvsim_test2() {
 	int nvid = 1234;
-	char *buf = nv_attach(nvid);
+	char *buf = nv_map(nvid);
 	printf("vaddr: %p, shm data: %s\n", (void *)buf, buf);
 	nv_detach(buf);
 }
@@ -157,7 +157,7 @@ void util_test() {
 
 void nvht_txn_test() {
 //	nvalloc_init(12345, 6000000); // 6M
-//	struct nvp_t ht_nvp = nvht_init(9988);
+//	struct nvp_t ht_nvp = nvht_init(99881);
 //	struct nvht_header *h = get_nvp(&ht_nvp);
 //	printf("size: %d %d\n", h->size,  h->capacity);
 //	int i = 0;
@@ -204,21 +204,21 @@ void nvht_txn_test() {
 
 void nvht_test1() {
 	nvalloc_init(12345, 6000000);
-	struct nvht_header *h = nvht_init(9988);
-	printf("capacity: %d\n", h->capacity);
+	struct nvht_header *h = nvht_init(99881);
+	printf("capacity: %d size %d\n", h->capacity, h->size);
 
 //	// Use rbtree cache will faster!
 //	long long ta = ustime();
 //	int j=0;
 //	while (++j < 1000) {
-//		nv_exist(9988);
+//		nv_exist(99881);
 //	}
 //	long long tb = ustime();
 //	printf("time diff %lld\n", tb - ta);
 //	j = 0;
 //	ta = ustime();
 //	while (++j < 1000) {
-//		nvpcache_search(9988);
+//		nvpcache_search(99881);
 //	}
 //	tb = ustime();
 //	printf("time diff %lld\n", tb - ta);
@@ -251,21 +251,22 @@ void nvht_test1() {
 
 void nvht_test2() {
 	nvalloc_init(12345, 6000000);
-	struct nvht_header *h = nvht_init(9988);
-	printf("capacity: %d\n", h->capacity);
+	struct nvht_header *h = nvht_init(99881);
 	int i = 0;
-	while (++i < 300) {
+	long long t1 = ustime();
+	while (++i < 10000) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
-		nvht_get(h, k, strlen(k)+1, v);
-		printf("%s: %s\n", k, v);
+		int ret = nvht_get(h, k, strlen(k) + 1, v);
 	}
+	long long t2 = ustime();
+	printf("time diff %lld\n", t2 - t1);
 }
 
 void nvht_clear() {
 	struct nvp_t tmp;
-	tmp.nvid = 9988;
+	tmp.nvid = 99881;
 	tmp.nvoffset = 0;
 	tmp.size = 0;
 	nvht_free(get_nvp(&tmp));

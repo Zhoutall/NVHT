@@ -32,7 +32,7 @@ struct nvht_header *nvht_init(int nvid) {
 		// map the exist nvht
 		struct nvpitem *item = nvpcache_search_foritem(nvid);
 		if (item != NULL) {
-			return get_nvp(&item->nvp);
+			return item->vaddr;
 		}
 		struct nvp_t nvht_nvp = gen_nvht_nvp(nvid);
 		struct nvht_header *h = get_nvp(&nvht_nvp);
@@ -75,7 +75,8 @@ struct nvht_header *nvht_init(int nvid) {
  */
 static int nvht_hashindex(struct nvht_header *h, char *k_str, int ksize) {
 	struct nvht_element *e = h->elem_ptr;
-	if (h->size >= (h->capacity / 2))
+//	if (h->size >= (h->capacity / 2))
+	if (h->size >= h->capacity)
 		return MAP_FULL;
 	/* Find the best index */
 	int curr = hash_string(k_str, ksize) % (h->capacity);
@@ -98,6 +99,7 @@ static int nvht_hashindex(struct nvht_header *h, char *k_str, int ksize) {
 }
 
 int nvht_rehash(struct nvht_header *h) {
+	printf("%s rehash load %d %d %f\n", __func__, h->size, h->capacity, (double)h->size/h->capacity);
 	struct nvht_element *e = h->elem_ptr;
 
 	struct nvtxn_info txn = nvtxn_start(h->log_ptr);
@@ -192,12 +194,14 @@ int nvht_get(struct nvht_header *h, char *k_str, int ksize, char *retvalue) {
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
 		int use = e[index].use;
-		if (use == 1) {
+		if (use == 1 && ksize == e[index].key.size) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
 			if (memcmp(k_str, curr_k_str, ksize) == 0) {
 				memcpy(retvalue, nvalloc_getnvp(&e[index].value), e[index].value.size);
 				return 0;
 			}
+		} else if (use == 0) {
+			break;
 		}
 		index = (index + 1) % (h->capacity);
 	}

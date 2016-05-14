@@ -10,12 +10,12 @@
  * alloc a new nv region and attach (attach an NEW nv region to vm)
  * return v_addr
  */
-void *nv_get(int nvid, int size);
+void *nv_get(int64_t  nvid, int size);
 /*
  * attach an EXISTING nv region to vm
  * return v_addr
  */
-void *nv_attach(int nvid);
+void *nv_map(int nvid);
 /*
  * detach an existing nv region to vm
  * MAY NOT BE USED in this proj
