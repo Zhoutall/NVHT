@@ -20,7 +20,7 @@
 struct nvht_element {
 	struct nvp_t key;
 	struct nvp_t value;
-	int use;
+	int use; /*0:empty 1:use 2:delete*/
 };
 
 struct nvht_header {

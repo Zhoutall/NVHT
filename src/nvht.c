@@ -83,13 +83,11 @@ static int nvht_hashindex(NVHT *h, char *k_str, int ksize) {
 	/* Linear probing */
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
-		if (e[curr].use == 0)
+		if (e[curr].use == 0 || e[curr].use == 2)
 			return curr;
-		if (e[curr].use == 1) {
-			struct nvp_t curr_k = e[curr].key;
-			char *curr_k_str = nvalloc_getnvp(&curr_k);
-			if (curr_k.size == ksize
-					&& (memcmp(k_str, curr_k_str, ksize) == 0)) {
+		if (e[curr].use == 1 && e[curr].key.size == ksize) {
+			char *curr_k_str = nvalloc_getnvp(&e[curr].key);
+			if (memcmp(k_str, curr_k_str, ksize) == 0) {
 				return curr;
 			}
 		}
@@ -141,7 +139,7 @@ static void _nvht_rehash_move(NVHT *h, struct nvp_t k, struct nvp_t v) {
 	char *k_str = nvalloc_getnvp(&k);
 	int index = nvht_hashindex(h, k_str, k.size);
 	while (index == MAP_FULL) {
-		printf("Bad hash function.\n");
+		printf("Bad hash function, do rehash again!!!!\n");
 		nvht_rehash(h);
 		index = nvht_hashindex(h, k_str, k.size);
 	}
@@ -178,8 +176,8 @@ void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize) {
 		e[index].key = k;
 		e[index].value = v;
 		e[index].use = 1;
-//		nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h,
-//				sizeof(NVHT));
+		nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h,
+				sizeof(NVHT));
 		h->size += 1;
 	}
 	nvtxn_commit(&txn);
@@ -194,14 +192,13 @@ int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue) {
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
 		int use = e[index].use;
+		if (use == 0) break;
 		if (use == 1 && ksize == e[index].key.size) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
 			if (memcmp(kstr, curr_k_str, ksize) == 0) {
 				memcpy(retvalue, nvalloc_getnvp(&e[index].value), e[index].value.size);
 				return e[index].value.size;
 			}
-		} else if (use == 0) {
-			break;
 		}
 		index = (index + 1) % (h->capacity);
 	}
@@ -214,13 +211,14 @@ int nvht_remove(NVHT *h, char *kstr, int ksize) {
 	int i;
 	for (i = 0; i < MAX_CHAIN_LENGTH; ++i) {
 		int use = e[index].use;
-		if (use == 1) {
+		if (use == 0) break;
+		if (use == 1 && e[index].key.size == ksize) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
 			if (memcmp(kstr, curr_k_str, ksize) == 0) {
 				struct nvtxn_info txn = nvtxn_start(nvl_get(h->log_nvid, 0));
 				nvtxn_record_data_update(&txn, NVHT_REMOVE, h->elems_nvp,
 						index * sizeof(struct nvht_element), e + index, sizeof(struct nvht_element));
-				e[index].use = 0;
+				e[index].use = 2;
 				nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h, sizeof(NVHT));
 				h->size -= 1;
 				// free nvp
