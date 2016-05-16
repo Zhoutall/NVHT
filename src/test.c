@@ -158,7 +158,7 @@ void util_test() {
 void nvht_txn_test() {
 //	nvalloc_init(12345, 6000000); // 6M
 //	struct nvp_t ht_nvp = nvht_init(99881);
-//	struct nvht_header *h = get_nvp(&ht_nvp);
+//	NVHT *h = get_nvp(&ht_nvp);
 //	printf("size: %d %d\n", h->size,  h->capacity);
 //	int i = 0;
 //	while (++i < 10) {
@@ -204,7 +204,7 @@ void nvht_txn_test() {
 
 void nvht_test1() {
 	nvalloc_init(12345, 6000000);
-	struct nvht_header *h = nvht_init(99881);
+	NVHT *h = nvht_init(99881);
 	printf("capacity: %d size %d\n", h->capacity, h->size);
 
 //	// Use rbtree cache will faster!
@@ -251,7 +251,7 @@ void nvht_test1() {
 
 void nvht_test2() {
 	nvalloc_init(12345, 6000000);
-	struct nvht_header *h = nvht_init(99881);
+	NVHT *h = nvht_init(99881);
 	int i = 0;
 	long long t1 = ustime();
 	while (++i < 10000) {

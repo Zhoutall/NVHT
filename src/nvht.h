@@ -28,27 +28,31 @@ struct nvht_header {
 	int capacity;
 	int size;
 	int head_nvid;
-	struct nvp_t elem_nvp;
 	int log_nvid;
+	struct nvp_t elems_nvp;
 	/* runtime data */
-	struct nvht_element *elem_ptr;
 	struct nvl_header *log_ptr;
+	struct nvht_element *elems_ptr;
 	/* not used now. In future, it can be used as a overflow array */
 	char data[0];
 };
 
+typedef struct nvht_header NVHT;
 /*
  * nvid here is used for nvht header
  */
-struct nvht_header *nvht_init(int nvid);
-void nvht_put(struct nvht_header *h, char *kstr, int ksize, char *vstr, int vsize);
-int nvht_get(struct nvht_header *h, char *k_str, int ksize, char *retvalue);
-int nvht_remove(struct nvht_header *h, char *k_str, int ksize);
-void nvht_free(struct nvht_header *h);
-void print_nvht_image(struct nvht_header *h);
+NVHT *nvht_init(int nvid);
+void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize);
+/*
+ * return -1 for fail, other for retvalue size
+ */
+int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue);
+int nvht_remove(NVHT *h, char *kstr, int ksize);
+void nvht_free(NVHT *h);
+void print_nvht_image(NVHT *h);
 
-static void _nvht_rehash_move(struct nvht_header *h, struct nvp_t k, struct nvp_t v);
-int nvht_rehash(struct nvht_header *h); /* non-static for test */
+static void _nvht_rehash_move(NVHT *h, struct nvp_t k, struct nvp_t v);
+int nvht_rehash(NVHT *h); /* non-static for test */
 
 #endif
 
