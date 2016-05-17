@@ -149,6 +149,29 @@ static int get_pool_size() {
 	return 2 * p->size * sizeof(int);
 }
 
+static void nvalloc_init_core(int h_nvid, int heap_size, int realsize) {
+	int *go_ptr = (int *) heap_base_addr;
+	int *magic_ptr = go_ptr;
+	++go_ptr;
+	*go_ptr = h_nvid;
+	++go_ptr;
+	*go_ptr = heap_size;
+	++go_ptr;
+	// set pool
+	struct pool_t *pool = (struct pool_t *) go_ptr;
+	pool->size = realsize;
+	int nodesize = realsize * 2;
+	int i;
+	/* set tree node size */
+	for (i = 0; i < 2 * realsize - 1; ++i) {
+		if (IS_POWER_OF_2(i + 1)) {
+			nodesize /= 2;
+		}
+		pool->longest[i] = nodesize;
+	}
+	*magic_ptr = HEAP_MAGIC;
+}
+
 void nvalloc_init(int h_nvid, int heap_size) {
 	if (nv_exist(h_nvid) != -1) {
 		// nvpcache
@@ -160,7 +183,18 @@ void nvalloc_init(int h_nvid, int heap_size) {
 		int *magic_ptr = (int *)heap_base_addr;
 		if (*magic_ptr != HEAP_MAGIC) {
 			printf("NV ALLOC HEAP MAGIC error!\n");
-			exit(EXIT_FAILURE);
+			// do a recovery
+			if (heap_size < HEAP_SIZE_MIN) {
+				heap_size = HEAP_SIZE_MIN;
+			}
+			int realsize = (heap_size - 3 * sizeof(int))
+					/ (HEAP_CHUNK_SIZE + 2 * sizeof(int));
+			if (!IS_POWER_OF_2(realsize)) {
+				realsize = fixsize(realsize);
+			}
+			heap_size = 3 * sizeof(int)
+					+ (2 * sizeof(int) + HEAP_CHUNK_SIZE) * realsize;
+			nvalloc_init_core(h_nvid, heap_size, realsize);
 		}
 		return;
 	}
@@ -182,28 +216,10 @@ void nvalloc_init(int h_nvid, int heap_size) {
 	heap_size = 3 * sizeof(int)
 			+ (2 * sizeof(int) + HEAP_CHUNK_SIZE) * realsize;
 	heap_base_addr = nv_get(h_nvid, heap_size);
+	nvalloc_init_core(h_nvid, heap_size, realsize);
 	// nvpcache
+	// do it at last because it does not affect consistency
 	nvpcache_insert(h_nvid, heap_base_addr);
-
-	int *go_ptr = (int *)heap_base_addr;
-	*go_ptr = HEAP_MAGIC;
-	++go_ptr;
-	*go_ptr = h_nvid;
-	++go_ptr;
-	*go_ptr = heap_size;
-	++go_ptr;
-	// set pool
-	struct pool_t *pool = (struct pool_t *)go_ptr;
-	pool->size = realsize;
-	int nodesize = realsize * 2;
-	int i;
-	/* set tree node size */
-	for (i = 0; i < 2 * realsize - 1; ++i) {
-		if (IS_POWER_OF_2(i + 1)) {
-			nodesize /= 2;
-		}
-		pool->longest[i] = nodesize;
-	}
 }
 
 /*

@@ -12,7 +12,7 @@
 #define MAP_FULL -1 	/* nvht is full */
 #define MAP_OK 0 	/* OK */
 
-#define MAX_CHAIN_LENGTH 128 /* set to be cacheline friendly */
+#define MAX_PROBING_LENGTH (128) /* set to be cacheline friendly */
 
 #define NVHT_HEADER_SIZE 4096
 #define INIT_CAPACITY 4096
@@ -20,7 +20,7 @@
 struct nvht_element {
 	struct nvp_t key;
 	struct nvp_t value;
-	int use; /*0:empty 1:use 2:delete*/
+	int status; /*0:empty 1:use 2:delete*/
 };
 
 struct nvht_header {
