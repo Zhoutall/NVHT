@@ -40,7 +40,7 @@ void pool_remove(struct pool_t *p) {
 	free(p);
 }
 
-int pool_alloc(struct nvtxn_info *txn, struct pool_t *p, int chunk_num) {
+int pool_alloc(struct pool_t *p, int chunk_num) {
 	int index = 0;
 
 	if (p == NULL)
@@ -78,7 +78,7 @@ int pool_alloc(struct nvtxn_info *txn, struct pool_t *p, int chunk_num) {
 	return offset;
 }
 
-void pool_free(struct nvtxn_info *txn, struct pool_t *p, int offset) {
+void pool_free(struct pool_t *p, int offset) {
 	if (p == NULL || offset < 0 || offset >= p->size) {
 		return;
 	}

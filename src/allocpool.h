@@ -1,8 +1,6 @@
 #ifndef __ALLOCPOOL_H__
 #define __ALLOCPOOL_H__
 
-#include "nvtxn.h"
-
 #define LEFT_LEAF(index) ((index) * 2 + 1)
 #define RIGHT_LEAF(index) ((index) * 2 + 2)
 #define PARENT(index) ( ((index) + 1) / 2 - 1)
@@ -32,9 +30,9 @@ void pool_remove(struct pool_t *p);
  *     size: alloc size
  */
 /* NOT USE: code inline */
-int pool_alloc(struct nvtxn_info *txn, struct pool_t *p, int size);
+int pool_alloc(struct pool_t *p, int size);
 /* NOT USE: code inline */
-void pool_free(struct nvtxn_info *txn, struct pool_t *p, int offset);
+void pool_free(struct pool_t *p, int offset);
 
 int pool_buddysize(struct pool_t *p, int offset);
 

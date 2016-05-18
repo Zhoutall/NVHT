@@ -6,6 +6,7 @@
 
 #include "rbtree.h"
 #include "nvtxn.h"
+#include "allocpool.h"
 
 struct nvtxn_info;
 

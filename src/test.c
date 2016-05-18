@@ -339,7 +339,7 @@ void pool_test() {
 	random_nvid();
 	t1 = ustime();
 	for (i = 0; i<10000; ++i) {
-		pool_alloc(NULL, p, random_nvid() % 4);
+		pool_alloc(p, random_nvid() % 4);
 	}
 	t2 = ustime();
 	printf("time diff %lld\n", t2 - t1);

@@ -5,7 +5,6 @@
 #include "nvp.h"
 #include "nvsim.h"
 #include "nvtxn.h"
-#include "allocpool.h"
 
 static struct rb_root nvpcache_root = RB_ROOT;
 
