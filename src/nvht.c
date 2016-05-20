@@ -130,7 +130,6 @@ static int nvht_hashindex(NVHT *h, char *k_str, int ksize) {
 }
 
 int nvht_rehash(NVHT *h) {
-	printf("%s rehash load %d %d %f\n", __func__, h->size, h->capacity, (double)h->size/h->capacity);
 	struct nvht_element *e = h->elems_ptr;
 
 	struct nvtxn_info txn = nvtxn_start(h->log_ptr);

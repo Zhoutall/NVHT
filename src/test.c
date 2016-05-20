@@ -5,14 +5,9 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <unistd.h>
-#include "nvsim.h"
 #include "list.h"
-#include "nvp.h"
-#include "util.h"
 #include "nvht.h"
-#include "nvlogger.h"
-#include "nvtxn.h"
-#include "allocpool.h"
+
 
 void nvsim_test1() {
 	int nvid = 1234;
@@ -420,4 +415,5 @@ int main(int argc, char *argv[]) {
 	} else {
 		printf("No test for %s\n", argv[1]);
 	}
+	return 0;
 }

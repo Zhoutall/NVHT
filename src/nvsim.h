@@ -4,6 +4,7 @@
 #ifndef __NVSIM_H__
 #define __NVSIM_H__
 
+#include <stdlib.h>
 #include "nvp.h"
 
 /*

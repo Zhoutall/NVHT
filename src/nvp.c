@@ -3,8 +3,6 @@
 #include <string.h>
 #include <assert.h>
 #include "nvp.h"
-#include "nvsim.h"
-#include "nvtxn.h"
 
 static struct rb_root nvpcache_root = RB_ROOT;
 

@@ -7,6 +7,7 @@
 #include "rbtree.h"
 #include "nvtxn.h"
 #include "allocpool.h"
+#include "nvsim.h"
 
 struct nvtxn_info;
 
