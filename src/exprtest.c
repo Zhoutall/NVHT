@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include "nvht.h"
 
-#define ID1 1234
-#define ID2 5678
+#define ID1 1345
+#define ID2 5785
 
 #define KEYSTR "test-key-[%d]"
 #define VALUESTR "test-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-value-[%d]"

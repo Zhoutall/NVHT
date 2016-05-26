@@ -13,6 +13,7 @@
 #define MAP_OK 0 	/* OK */
 
 #define MAX_PROBING_LENGTH (128) /* set to be cacheline friendly */
+#define MAX_LOAD_FACTOR (0.8)
 
 #define NVHT_HEADER_SIZE 4096
 #define INIT_CAPACITY 4096

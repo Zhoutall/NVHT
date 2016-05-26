@@ -109,7 +109,7 @@ NVHT *nvht_init(int nvid) {
 static int nvht_hashindex(NVHT *h, char *k_str, int ksize) {
 	struct nvht_element *e = h->elems_ptr;
 //	if (h->size >= (h->capacity / 2))
-	if (h->size >= (h->capacity * 0.8))
+	if (h->size >= (h->capacity * MAX_LOAD_FACTOR))
 		return MAP_FULL;
 	/* Find the best index */
 	int curr = hash_string(k_str, ksize) % (h->capacity);
@@ -130,6 +130,7 @@ static int nvht_hashindex(NVHT *h, char *k_str, int ksize) {
 }
 
 int nvht_rehash(NVHT *h) {
+//	printf("Rehash load factor %d %f\n", h->capacity, (double)h->size/h->capacity);
 	struct nvht_element *e = h->elems_ptr;
 
 	struct nvtxn_info txn = nvtxn_start(h->log_ptr);

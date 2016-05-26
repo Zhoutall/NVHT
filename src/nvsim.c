@@ -17,7 +17,6 @@ void *nv_get(int64_t nvid, int size) {
 	}
 	int shmid = shmget(k, size, 0777 | IPC_CREAT | IPC_EXCL);
 	if (shmid == -1) {
-//		printf("%s nvid %d\n", __func__, nvid);
 		perror("shmget");
 		exit(EXIT_FAILURE);
 	}
