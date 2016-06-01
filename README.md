@@ -1,1 +1,1 @@
-NVHT
+NVHTSet shared memory max size for testsudo sysctl -w kernel.shmmax=870425356

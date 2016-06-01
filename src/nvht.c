@@ -1,10 +1,13 @@
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "nvht.h"
 #include "nvp.h"
 #include "util.h"
 #include "nvlogger.h"
 #include "nvtxn.h"
+
+pthread_spinlock_t m;
 
 static inline int nvht_elem_size(int capacity) {
 	return sizeof(struct nvht_element) * capacity;
@@ -28,6 +31,7 @@ static struct nvp_t gen_nvht_nvp(int nvid) {
  * this function should attach these two nv region
  */
 NVHT *nvht_init(int nvid) {
+	pthread_spin_init(&m, PTHREAD_PROCESS_PRIVATE);
 	if (nv_exist(nvid) != -1) {
 		// map the exist nvht
 		struct nvpitem *item = nvpcache_search_foritem(nvid);
@@ -185,6 +189,7 @@ static void _nvht_rehash_move(NVHT *h, struct nvp_t k, struct nvp_t v) {
 }
 
 void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize) {
+	pthread_spin_lock(&m);
 	int index = nvht_hashindex(h, kstr, ksize);
 	while (index == MAP_FULL) {
 		nvht_rehash(h);
@@ -214,12 +219,14 @@ void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize) {
 		h->size += 1;
 	}
 	nvtxn_commit(&txn);
+	pthread_spin_unlock(&m);
 	return;
 }
 
 int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue) {
 	if (retvalue == NULL)
 		return -1;
+	pthread_spin_lock(&m);
 	struct nvht_element *e = h->elems_ptr;
 	int index = hash_string(kstr, ksize) % (h->capacity);
 	int i;
@@ -230,15 +237,18 @@ int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
 			if (memcmp(kstr, curr_k_str, ksize) == 0) {
 				memcpy(retvalue, nvalloc_getnvp(&e[index].value), e[index].value.size);
+				pthread_spin_unlock(&m);
 				return e[index].value.size;
 			}
 		}
 		index = (index + 1) % (h->capacity);
 	}
+	pthread_spin_unlock(&m);
 	return -1;
 }
 
 int nvht_remove(NVHT *h, char *kstr, int ksize) {
+	pthread_spin_lock(&m);
 	struct nvht_element *e = h->elems_ptr;
 	int index = nvht_hashindex(h, kstr, ksize);
 	int i;
@@ -258,15 +268,18 @@ int nvht_remove(NVHT *h, char *kstr, int ksize) {
 				txn_nvalloc_free(&txn, &e[index].key);
 				txn_nvalloc_free(&txn, &e[index].value);
 				nvtxn_commit(&txn);
+				pthread_spin_unlock(&m);
 				return MAP_OK;
 			}
 		}
 		index = (index + 1) % (h->capacity);
 	}
+	pthread_spin_unlock(&m);
 	return MAP_MISSING;
 }
 
 void nvht_free(NVHT *h) {
+	pthread_spin_destroy(&m);
 	free_nvp(&h->elems_nvp);
 	nvl_free(h->log_nvid);
 	struct nvp_t nvht_nvp = gen_nvht_nvp(h->head_nvid);
