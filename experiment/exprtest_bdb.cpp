@@ -1,3 +1,6 @@
+/*
+ * g++ ./exprtest_bdb.cpp -o mytmpfs/exprtest_bdb -ldb
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,14 +1,20 @@
+#include <iostream>
+#include <sys/time.h>
+#include <cstdlib>
 #include <pthread.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <unistd.h>
-#include "nvht.h"
+#include "leveldb/db.h"
+#include "leveldb/cache.h"
+using namespace std;
 
-#define ID1 1345
-#define ID2 5785
+long long ustime(void) {
+    struct timeval tv;
+    long long ust;
+
+    gettimeofday(&tv, NULL);
+    ust = ((long)tv.tv_sec)*1000000;
+    ust += tv.tv_usec;
+    return ust;
+}
 
 #define MAXTHREADNUM 20
 #define TOTAL 1000000
@@ -18,23 +24,29 @@
 #define KEYSTR "test-key-[%d]"
 #define VALUESTR "test-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-value-[%d]"
 
-NVHT *h;
+//pthread_mutex_t m;
 int thread_num;
+leveldb::DB* db;
 
 void *insert(void *arg) {
 	int i;
-	int pos = (int) arg;
+	long pos = (long) arg;
 
 	int start = TOTAL*pos/thread_num;
 	int end = TOTAL*(pos+1)/thread_num;
-	printf("Thread %d %d-%d\n", pos, start, end);
+	printf("Thread %ld %d-%d\n", pos, start, end);
+	leveldb::Status s;
+	leveldb::WriteOptions write_options;
+	write_options.sync = true;
 	i = start;
 	while (i++ < end) {
 		char k[30];
 		char v[200];
 		sprintf(k, KEYSTR, i);
 		sprintf(v, VALUESTR, i);
-		nvht_put(h, k, strlen(k) + 1, v, strlen(v) + 1);
+//		pthread_mutex_lock(&m);
+		s = db->Put(write_options, k, v);
+//		pthread_mutex_unlock(&m);
 	}
 	pthread_exit((void*) 0);
 }
@@ -44,8 +56,14 @@ void thread_insert() {
 	pthread_t threads[MAXTHREADNUM];
 	void *status;
 
-	nvalloc_init(ID1, 500000000);
-	h = nvht_init(ID2);
+	leveldb::Options options;
+	leveldb::Status s;
+	options.create_if_missing = true;
+	options.error_if_exists = true;
+	std::string dbpath = "testdb";
+	s = leveldb::DB::Open(options, dbpath, &db);
+
+//	pthread_mutex_init(&m, NULL);
 	long long t1, t2;
 	t1 = ustime();
 	for (i=0; i<thread_num; ++i) {
@@ -56,22 +74,27 @@ void thread_insert() {
 	}
 	t2 = ustime();
 	printf("%s time diff %lld\n", __func__, t2 - t1);
+//	pthread_mutex_destroy(&m);
+	delete db;
 }
 
 void *hybrid(void *arg) {
 	int i;
-	int pos = (int) arg;
+	long pos = (long) arg;
 
 	int start = TOTALWRITE*pos/thread_num;
 	int end = TOTALWRITE*(pos+1)/thread_num;
 	printf("Thread %d write %d-%d\n", pos, start, end);
+	leveldb::Status s;
+	leveldb::WriteOptions write_options;
+	write_options.sync = true;
 	i = start;
 	while (i++ < end) {
 		char k[30];
 		char v[200];
 		sprintf(k, KEYSTR, i);
 		sprintf(v, VALUESTR, i);
-		nvht_put(h, k, strlen(k) + 1, v, strlen(v) + 1);
+		s = db->Put(write_options, k, v);
 	}
 
 	start = TOTALSEARCH*pos/thread_num;
@@ -80,11 +103,10 @@ void *hybrid(void *arg) {
 	i = start;
 	while (i++ < end) {
 		char k[30];
-		char v[200];
+		string v;
 		sprintf(k, KEYSTR, i % TOTALWRITE);
-		nvht_get(h, k, strlen(k) + 1, v);
+		s = db->Get(leveldb::ReadOptions(), k, &v);
 	}
-
 	pthread_exit((void*) 0);
 }
 
@@ -93,11 +115,17 @@ void thread_hybrid() {
 	pthread_t threads[MAXTHREADNUM];
 	void *status;
 
-	nvalloc_init(ID1, 500000000);
-	h = nvht_init(ID2);
+	leveldb::Options options;
+	leveldb::Status s;
+	options.create_if_missing = true;
+	options.error_if_exists = true;
+	std::string dbpath = "testdb";
+	s = leveldb::DB::Open(options, dbpath, &db);
+
+//	pthread_mutex_init(&m, NULL);
 	long long t1, t2;
 	t1 = ustime();
-	for (i = 0; i < thread_num; ++i) {
+	for (i=0; i<thread_num; ++i) {
 		pthread_create(&threads[i], NULL, hybrid, (void *) i);
 	}
 	for (i = 0; i < thread_num; i++) {
@@ -105,15 +133,8 @@ void thread_hybrid() {
 	}
 	t2 = ustime();
 	printf("%s time diff %lld\n", __func__, t2 - t1);
-}
-
-void clean() {
-	struct nvp_t tmp;
-	tmp.nvid = ID2;
-	tmp.nvoffset = 0;
-	tmp.size = 0;
-	nvht_free(get_nvp(&tmp));
-	nv_remove(ID1);
+//	pthread_mutex_destroy(&m);
+	delete db;
 }
 
 /*
@@ -121,7 +142,6 @@ void clean() {
  */
 int main(int argc, char *argv[]) {
 	if (argc < 3) {
-		clean();
 		return -1;
 	}
 	thread_num = atoi(argv[2]);
