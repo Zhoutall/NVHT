@@ -4,6 +4,38 @@
 #include <assert.h>
 #include "nvp.h"
 
+#ifdef USE_HASHCACHE
+struct nvpitem *base = NULL;
+
+void *nvpcache_search(int _nvid) {
+	struct nvpitem *item = NULL;
+	HASH_FIND_INT(base, &_nvid, item);
+	if (item == NULL) return NULL;
+	return item->vaddr;
+}
+
+struct nvpitem *nvpcache_search_foritem(int _nvid) {
+	struct nvpitem *item;
+	HASH_FIND_INT(base, &_nvid, item);
+	return item;
+}
+
+int nvpcache_insert(int _nvid, void *addr) {
+	struct nvpitem *_nvpitem = malloc(sizeof(struct nvpitem));
+	_nvpitem->nvid = _nvid;
+	_nvpitem->vaddr = addr;
+	HASH_ADD_INT(base, nvid, _nvpitem);
+}
+
+int nvpcache_delete(int _nvid) {
+	struct nvpitem *item = nvpcache_search_foritem(_nvid);
+	if (item == NULL) return -1;
+	HASH_DEL(base, item);
+	free(item);
+	return 0;
+}
+
+#else
 static struct rb_root nvpcache_root = RB_ROOT;
 
 void *nvpcache_search(int _nvid) {
@@ -66,6 +98,7 @@ static int nvpcache_delete_rb(struct rb_root *root, int _nvid) {
     free(item);
     return 0;
 }
+#endif
 
 struct nvp_t alloc_nvp(int _nvid, int size) {
 	// TODO check nvid not exist
@@ -110,6 +143,7 @@ void free_nvp(struct nvp_t *nvp) {
 #define USEPOOL
 
 static void *heap_base_addr = 0;
+static int *wear_leveling_mgr = 0; // wear-leveling
 
 #define HEAP_SIZE_MIN 131072 // 128kB
 #define HEAP_CHUNK_SIZE 128 // 128B per chunk
@@ -160,13 +194,22 @@ static void nvalloc_init_core(int h_nvid, int heap_size, int realsize) {
 	int nodesize = realsize * 2;
 	int i;
 	/* set tree node size */
-	for (i = 0; i < 2 * realsize - 1; ++i) {
+	int arrlen = 2 * realsize - 1;
+	for (i = 0; i < arrlen; ++i) {
 		if (IS_POWER_OF_2(i + 1)) {
 			nodesize /= 2;
 		}
 		pool->longest[i] = nodesize;
 	}
 	*magic_ptr = HEAP_MAGIC;
+}
+
+static void wear_leveling_init(int heap_size) {
+	int realsize = (heap_size - 3 * sizeof(int)) / (HEAP_CHUNK_SIZE + 2 * sizeof(int)); /* no need to fix */
+	int arrlen = 2 * realsize - 1;
+	/* init wear-leveling : init to 0 on each startup */
+	wear_leveling_mgr = (int *)malloc(arrlen * sizeof(int));
+	memset(wear_leveling_mgr, 0, arrlen * sizeof(int));
 }
 
 void nvalloc_init(int h_nvid, int heap_size) {
@@ -193,6 +236,7 @@ void nvalloc_init(int h_nvid, int heap_size) {
 					+ (2 * sizeof(int) + HEAP_CHUNK_SIZE) * realsize;
 			nvalloc_init_core(h_nvid, heap_size, realsize);
 		}
+		wear_leveling_init(get_heap_size());
 		return;
 	}
 	/*
@@ -214,9 +258,11 @@ void nvalloc_init(int h_nvid, int heap_size) {
 			+ (2 * sizeof(int) + HEAP_CHUNK_SIZE) * realsize;
 	heap_base_addr = nv_get(h_nvid, heap_size);
 	nvalloc_init_core(h_nvid, heap_size, realsize);
+	wear_leveling_init(get_heap_size());
 	// nvpcache
 	// do it at last because it does not affect consistency
 	nvpcache_insert(h_nvid, heap_base_addr);
+	return;
 }
 
 /*
@@ -309,27 +355,42 @@ struct nvp_t nvalloc_malloc(struct nvtxn_info *txn, int size) {
 		printf("heap memory not enough\n");
 		exit(EXIT_FAILURE);
 	}
-	/* find the match node */
+	/* find the match node
+	 * add wear-leveling
+	 * */
 	int nodesize;
 	for (nodesize = p->size; nodesize != chunk_num; nodesize /= 2) {
-		if (p->longest[LEFT_LEAF(index)] >= chunk_num)
-			index = LEFT_LEAF(index);
-		else
-			index = RIGHT_LEAF(index);
+		int li = LEFT_LEAF(index), ri = RIGHT_LEAF(index);
+		if (p->longest[li] >= chunk_num && p->longest[ri] >= chunk_num) {
+			index = wear_leveling_mgr[li] <= wear_leveling_mgr[ri]? li: ri;
+		} else if (p->longest[li] >= chunk_num) {
+			index = li;
+		} else {
+			index = ri;
+		}
 	}
 	/* mark use */
 	nvtxn_record_pool_update(txn, p, index, 0);
 	p->longest[index] = 0;
+	wear_leveling_mgr[index]++;
 	int offset = (index + 1) * nodesize - p->size;
-	/* record use to parents */
-	while (index) {
-		index = PARENT(index);
-		int tmp = MAX(p->longest[LEFT_LEAF(index)],
-				p->longest[RIGHT_LEAF(index)]);
-//		if (p->longest[index] == tmp)
-//			break;
-		p->longest[index] = tmp;
+	/* record use to parents
+	 * update wear-leveling info
+	 * */
+	int i;
+	for (i=PARENT(index); i>0; i=PARENT(i)) {
+		int tmp = MAX(p->longest[LEFT_LEAF(i)], p->longest[RIGHT_LEAF(i)]);
+		if (p->longest[i] == tmp)
+			break;
+		p->longest[i] = tmp;
 	}
+	for (i=PARENT(index); i>0; i=PARENT(i)) {
+		int tmp = MAX(wear_leveling_mgr[LEFT_LEAF(i)], wear_leveling_mgr[RIGHT_LEAF(i)]);
+		if (wear_leveling_mgr[i] == tmp)
+			break;
+		wear_leveling_mgr[i] = tmp;
+	}
+
 	// return nvp
 	struct nvp_t nvp;
 	nvp.nvid = get_heap_nvid();
@@ -385,8 +446,8 @@ void nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp) {
 			tmp = nodesize;
 		else
 			tmp = MAX(left_longest, right_longest);
-//		if (p->longest[index] == tmp)
-//			break;
+		if (p->longest[index] == tmp)
+			break;
 		p->longest[index] = tmp;
 	}
 }

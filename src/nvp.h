@@ -8,8 +8,11 @@
 #include "nvtxn.h"
 #include "allocpool.h"
 #include "nvsim.h"
+#include "uthash.h"
 
 struct nvtxn_info;
+
+#define USE_HASHCACHE // comment it if using rbtree
 
 // this can be stored in NVM
 struct nvp_t{
@@ -24,7 +27,11 @@ struct nvp_t{
 struct nvpitem {
     int nvid;
     void *vaddr;
+#ifdef USE_HASHCACHE
+    UT_hash_handle hh;
+#else
     struct rb_node node; /* node in rbtree */
+#endif
 };
 
 struct pool_txn_record_t {
@@ -42,9 +49,9 @@ void *nvpcache_search(int _nvid);
 struct nvpitem *nvpcache_search_foritem(int _nvid);
 int nvpcache_insert(int _nvid, void *addr);
 int nvpcache_delete(int _nvid);
-static struct nvpitem *nvpcache_search_rb(struct rb_root *root, int _nvid);
-static int nvpcache_insert_rb(struct rb_root *root, struct nvpitem *_nvpitem);
-static int nvpcache_delete_rb(struct rb_root *root, int _nvid);
+// static struct nvpitem *nvpcache_search_rb(struct rb_root *root, int _nvid);
+// static int nvpcache_insert_rb(struct rb_root *root, struct nvpitem *_nvpitem);
+// static int nvpcache_delete_rb(struct rb_root *root, int _nvid);
 
 /*
  * 1. alloc a new nvp region (get & insert cache)
