@@ -104,10 +104,11 @@ struct nvp_t alloc_nvp(int _nvid, int size) {
 	// TODO check nvid not exist
 	void *vaddr = nv_get(_nvid, size);
 	nvpcache_insert(_nvid, vaddr);
-	struct nvp_t nvp_ret;
-	nvp_ret.nvid = _nvid;
-	nvp_ret.nvoffset = 0;
-	nvp_ret.size = size;
+	struct nvp_t nvp_ret = {
+		.nvid = _nvid,
+		.nvoffset = 0,
+		.size = size
+	};
 	return nvp_ret;
 }
 
@@ -157,25 +158,25 @@ static int *wear_leveling_mgr = 0; // wear-leveling
  * helper function
  */
 static int get_heap_size() {
-	assert(heap_base_addr != 0);
+	// assert(heap_base_addr != 0);
 	int *hsize_ptr = heap_base_addr + 2 * sizeof(int);
 	return *hsize_ptr;
 }
 
 static int get_heap_nvid() {
-	assert(heap_base_addr != 0);
+	// assert(heap_base_addr != 0);
 	int *hvid_ptr = heap_base_addr + sizeof(int);
 	return *hvid_ptr;
 }
 
 #ifdef USEPOOL
 static struct pool_t *get_pool_addr() {
-	assert(heap_base_addr != 0);
+	// assert(heap_base_addr != 0);
 	return heap_base_addr + 3 * sizeof(int);
 }
 
 static int get_pool_size() {
-	assert(heap_base_addr != 0);
+	// assert(heap_base_addr != 0);
 	struct pool_t *p = get_pool_addr();
 	return 2 * p->size * sizeof(int);
 }
@@ -329,9 +330,11 @@ static void nvtxn_record_pool_update(struct nvtxn_info *txn, struct pool_t *p, i
 			&data, sizeof(struct pool_txn_record_t));
 }
 
+
 struct nvp_t txn_nvalloc_malloc(struct nvtxn_info *txn, int size) {
 	return nvalloc_malloc(txn, size);
 }
+
 
 struct nvp_t nvalloc_malloc(struct nvtxn_info *txn, int size) {
 	assert(heap_base_addr != 0);
@@ -392,15 +395,16 @@ struct nvp_t nvalloc_malloc(struct nvtxn_info *txn, int size) {
 	}
 
 	// return nvp
-	struct nvp_t nvp;
-	nvp.nvid = get_heap_nvid();
-	nvp.nvoffset = offset * HEAP_CHUNK_SIZE + 3 * sizeof(int) + get_pool_size();
-	nvp.size = size;
+	struct nvp_t nvp = {
+		.nvid = get_heap_nvid(),
+		.nvoffset = offset * HEAP_CHUNK_SIZE + 3 * sizeof(int) + get_pool_size(),
+		.size = size
+	};
 	return nvp;
 }
 
 void *nvalloc_getnvp(struct nvp_t *nvp) {
-	assert(heap_base_addr != 0);
+	// assert(heap_base_addr != 0);
 	if (nvp == NULL) {
 		printf("%s: NULL argument\n", __func__);
 		return NULL;
@@ -409,6 +413,7 @@ void *nvalloc_getnvp(struct nvp_t *nvp) {
 }
 
 void txn_nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp) {
+	/* not used, use nvalloc_free directly */
 	return nvalloc_free(txn, nvp);
 }
 
@@ -453,6 +458,7 @@ void nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp) {
 }
 
 #else
+/* not used */
 static int hintindex = 0;
 
 static int get_bitmap_bits() {
@@ -628,17 +634,11 @@ void nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp) {
 
 struct nvp_t txn_make_nvp_withdata(struct nvtxn_info *txn, void *d, int dsize) {
 	assert(heap_base_addr != 0);
-
+#ifdef USEPOOL
+	struct nvp_t d_nvp = nvalloc_malloc(txn, dsize);
+#else
 	struct nvp_t d_nvp = txn_nvalloc_malloc(txn, dsize);
-	void *d_nv = nvalloc_getnvp(&d_nvp);
-	memcpy(d_nv, d, dsize);
-	return d_nvp;
-}
-
-struct nvp_t make_nvp_withdata(void *d, int dsize) {
-	assert(heap_base_addr != 0);
-
-	struct nvp_t d_nvp = txn_nvalloc_malloc(NULL, dsize);
+#endif
 	void *d_nv = nvalloc_getnvp(&d_nvp);
 	memcpy(d_nv, d, dsize);
 	return d_nvp;

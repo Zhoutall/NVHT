@@ -201,15 +201,15 @@ void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize) {
 	// free old value if key exists (do a replace)
 	if (e[index].status == 1) {
 		struct nvp_t oldv_nvp = e[index].value;
-		txn_nvalloc_free(&txn, &oldv_nvp);
+		nvalloc_free(&txn, &oldv_nvp);
 		nvtxn_record_data_update(&txn, NVHT_PUT, h->elems_nvp,
 				index * sizeof(struct nvht_element), e + index,
 				sizeof(struct nvht_element));
 		e[index].value = v;
 	} else {
 		struct nvp_t k = txn_make_nvp_withdata(&txn, kstr, ksize);
-		nvtxn_record_data_update(&txn, NVHT_PUT, h->elems_nvp,
-				index * sizeof(struct nvht_element), e + index,
+		nvtxn_record_data_update(&txn, NVHT_PUT_NEW, h->elems_nvp,
+				index * sizeof(struct nvht_element), NULL,
 				sizeof(struct nvht_element));
 		e[index].key = k;
 		e[index].value = v;
@@ -223,9 +223,7 @@ void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize) {
 	return;
 }
 
-int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue) {
-	if (retvalue == NULL)
-		return -1;
+int nvht_get(NVHT *h, char *kstr, int ksize, char **retvalue) {
 	pthread_spin_lock(&m);
 	struct nvht_element *e = h->elems_ptr;
 	int index = hash_string(kstr, ksize) % (h->capacity);
@@ -236,7 +234,8 @@ int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue) {
 		if (use == 1 && ksize == e[index].key.size) {
 			char *curr_k_str = nvalloc_getnvp(&e[index].key);
 			if (memcmp(kstr, curr_k_str, ksize) == 0) {
-				memcpy(retvalue, nvalloc_getnvp(&e[index].value), e[index].value.size);
+				*retvalue = nvalloc_getnvp(&e[index].value);
+				//memcpy(retvalue, nvalloc_getnvp(&e[index].value), e[index].value.size);
 				pthread_spin_unlock(&m);
 				return e[index].value.size;
 			}
@@ -265,8 +264,8 @@ int nvht_remove(NVHT *h, char *kstr, int ksize) {
 				nvtxn_record_data_update(&txn, NVHT_HEADER, gen_nvht_nvp(h->head_nvid), 0, h, sizeof(NVHT));
 				h->size -= 1;
 				// free nvp
-				txn_nvalloc_free(&txn, &e[index].key);
-				txn_nvalloc_free(&txn, &e[index].value);
+				nvalloc_free(&txn, &e[index].key);
+				nvalloc_free(&txn, &e[index].value);
 				nvtxn_commit(&txn);
 				pthread_spin_unlock(&m);
 				return MAP_OK;

@@ -63,9 +63,9 @@ void test_search(int count) {
 	t1 = ustime();
 	while (i++ < count) {
 		char k[30];
-		char v[200];
+		char *v;
 		sprintf(k, KEYSTR, i);
-		nvht_get(h, k, strlen(k) + 1, v);
+		nvht_get(h, k, strlen(k) + 1, &v);
 	}
 	t2 = ustime();
 	printf("%s time diff %lld\n", __func__, t2 - t1);
@@ -80,13 +80,13 @@ void test_searchr(int count) {
 	t1 = ustime();
 	while (i < j) {
 		char k[30];
-		char v[200];
+		char *v;
 		sprintf(k, KEYSTR, i);
-		nvht_get(h, k, strlen(k) + 1, v);
+		nvht_get(h, k, strlen(k) + 1, &v);
 		if (i >= j)
 			break;
 		sprintf(k, KEYSTR, j);
-		nvht_get(h, k, strlen(k) + 1, v);
+		nvht_get(h, k, strlen(k) + 1, &v);
 		++i;
 		--j;
 	}
@@ -136,8 +136,6 @@ int main(int argc, char *argv[]) {
 		test_insert(count);
 	} else if (strcmp(argv[1], "search")==0) {
 		test_search(count);
-	} else if (strcmp(argv[1], "hybrid") == 0) {
-		test_hybrid(count);
 	} else if (strcmp(argv[1], "searchr")==0) {
 		test_searchr(count);
 	} else if (strcmp(argv[1], "delete")==0) {

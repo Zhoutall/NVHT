@@ -151,78 +151,17 @@ void util_test() {
 }
 
 void nvht_txn_test() {
-//	nvalloc_init(12345, 6000000); // 6M
-//	struct nvp_t ht_nvp = nvht_init(99881);
-//	NVHT *h = get_nvp(&ht_nvp);
-//	printf("size: %d %d\n", h->size,  h->capacity);
-//	int i = 0;
-//	while (++i < 10) {
-//		char k[20];
-//		char v[20];
-//		sprintf(k, "nv key %d", i);
-//		sprintf(v, "nv value %d", i * i);
-//		nvht_put(ht_nvp, k, strlen(k) + 1, v, strlen(v) + 1);
-//	}
-
-//	nvht_rehash(ht_nvp);
-//	i = 0;
-//	printf("--------\n");
-//	while (++i < 10) {
-//		char k[20];
-//		sprintf(k, "nv key %d", i);
-//		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
-//		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
-//	}
-//	printf("size: %d %d\n", h->size, h->capacity);
-//
-//	return; /*****/
-
-//	printf("size: %d\n", h->size);
-//	i = 0;
-//	printf("--------\n");
-//	while (++i < 10) {
-//		char k[20];
-//		sprintf(k, "nv key %d", i);
-//		nvht_remove(ht_nvp, k, strlen(k) + 1);
-//	}
-//	printf("size: %d\n", h->size);
-//	i = 0;
-//	printf("--------\n");
-//	while (++i < 10) {
-//		char k[20];
-//		sprintf(k, "nv key %d", i);
-//		struct nvp_t *tmp = nvht_get(ht_nvp, k, strlen(k) + 1);
-//		printf("%s: %s\n", k, (char *) nvalloc_getnvp(tmp));
-//	}
-//	printf("size: %d\n", h->size);
+	// deprecated
 }
 
 void nvht_test1() {
-	nvalloc_init(12345, 6000000);
+	nvalloc_init(12345, 1000000);
 	NVHT *h = nvht_init(99881);
 	printf("capacity: %d size %d\n", h->capacity, h->size);
-
-//	// Use rbtree cache will faster!
-//	long long ta = ustime();
-//	int j=0;
-//	while (++j < 1000) {
-//		nv_exist(99881);
-//	}
-//	long long tb = ustime();
-//	printf("time diff %lld\n", tb - ta);
-//	j = 0;
-//	ta = ustime();
-//	while (++j < 1000) {
-//		nvpcache_search(99881);
-//	}
-//	tb = ustime();
-//	printf("time diff %lld\n", tb - ta);
-//	return;
-
 	// try put many data
 	int i=0;
 	long long t1 = ustime();
-	while (++i < 10000) {
+	while (++i < 1000) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
@@ -234,26 +173,28 @@ void nvht_test1() {
 	printf("--------\n");
 	i = 0;
 	t1 = ustime();
-	while (++i < 10000) {
+	while (++i < 1000) {
 		char k[20];
-		char v[20];
+		char *v;
 		sprintf(k, "nv key %d", i);
-		int ret = nvht_get(h, k, strlen(k) + 1, v);
+		int ret = nvht_get(h, k, strlen(k) + 1, &v);
+		//printf("%s %d\n", v, ret);
 	}
 	t2 = ustime();
 	printf("time diff %lld\n", t2 - t1);
 }
 
 void nvht_test2() {
-	nvalloc_init(12345, 6000000);
+	nvalloc_init(12345, 1000000);
 	NVHT *h = nvht_init(99881);
 	int i = 0;
 	long long t1 = ustime();
-	while (++i < 10000) {
+	while (++i < 1000) {
 		char k[20];
-		char v[20];
+		char *v;
 		sprintf(k, "nv key %d", i);
-		int ret = nvht_get(h, k, strlen(k) + 1, v);
+		int ret = nvht_get(h, k, strlen(k) + 1, &v);
+		//printf("%s %d\n", v, ret);
 	}
 	long long t2 = ustime();
 	printf("time diff %lld\n", t2 - t1);

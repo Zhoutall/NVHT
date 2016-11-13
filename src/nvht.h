@@ -47,7 +47,7 @@ void nvht_put(NVHT *h, char *kstr, int ksize, char *vstr, int vsize);
 /*
  * return -1 for fail, other for retvalue size
  */
-int nvht_get(NVHT *h, char *kstr, int ksize, char *retvalue);
+int nvht_get(NVHT *h, char *kstr, int ksize, char **retvalue);
 int nvht_remove(NVHT *h, char *kstr, int ksize);
 void nvht_free(NVHT *h);
 void print_nvht_image(NVHT *h);

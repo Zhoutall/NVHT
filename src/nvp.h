@@ -76,11 +76,11 @@ struct nvp_t nvalloc_malloc(struct nvtxn_info *txn, int size);
 void *nvalloc_getnvp(struct nvp_t *nvp);
 void txn_nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp);
 void nvalloc_free(struct nvtxn_info *txn, struct nvp_t *nvp);
+
 /*
  * create nvp and full with data (raw data, so that no pointer)
  */
 struct nvp_t txn_make_nvp_withdata(struct nvtxn_info *txn, void *d, int dsize);
-struct nvp_t make_nvp_withdata(void *d, int dsize);
 
 void pool_tree_recovery(struct pool_txn_record_t *data);
 #endif

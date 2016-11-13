@@ -62,7 +62,9 @@ void nvl_txn_append(struct nvl_header *nvl, void *data_header, int dhsize, void 
 	pos->magic1 = NVLOGGER_MAGIC_1;
 	pos->len = dhsize + dsize;
 	memcpy(pos->data, data_header, dhsize);
-	memcpy(pos->data + dhsize, data, dsize);
+	if (data != NULL) {
+		memcpy(pos->data + dhsize, data, dsize);
+	}
 	int *magic2 = (int *) (pos->data + dhsize + dsize);
 	*magic2 = NVLOGGER_MAGIC_2;
 	/* finish append */

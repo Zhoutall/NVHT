@@ -80,9 +80,9 @@ void *hybrid(void *arg) {
 	i = start;
 	while (i++ < end) {
 		char k[30];
-		char v[200];
+		char v;
 		sprintf(k, KEYSTR, i % TOTALWRITE);
-		nvht_get(h, k, strlen(k) + 1, v);
+		nvht_get(h, k, strlen(k) + 1, &v);
 	}
 
 	pthread_exit((void*) 0);

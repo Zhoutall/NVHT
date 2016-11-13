@@ -7,10 +7,11 @@
 #include "nvp.h"
 
 static struct nvp_t nvp_parse(struct nvtxn_record_header *h) {
-	struct nvp_t ret;
-	ret.nvid = h->nvp.nvid;
-	ret.nvoffset = h->nvp.nvoffset;
-	ret.size = h->nvp.size;
+	struct nvp_t ret = {
+		.nvid = h->nvp.nvid,
+		.nvoffset = h->nvp.nvoffset,
+		.size = h->nvp.size
+	};
 	return ret;
 }
 
@@ -20,9 +21,10 @@ struct nvtxn_info nvtxn_start(struct nvl_header *nvlh) {
 		printf("NVLOGGER header magic number error\n");
 		exit(EXIT_FAILURE);
 	}
-	struct nvtxn_info ret;
-	ret.nvlh = nvlh;
-	ret.txn_id = random_txnid();
+	struct nvtxn_info ret = {
+		.nvlh = nvlh,
+		.txn_id = random_txnid()
+	};
 	return ret;
 }
 
@@ -59,9 +61,10 @@ void nvtxn_commit(struct nvtxn_info *txn) {
 	if (txn == NULL)
 		return;
 
-	struct nvtxn_record_header rh;
-	rh.txn_id = txn->txn_id;
-	rh.op = COMMIT;
+	struct nvtxn_record_header rh = {
+		.txn_id = txn->txn_id,
+		.op = COMMIT
+	};
 	// write commit log
 	nvl_append(txn->nvlh, &rh, sizeof(struct nvtxn_record_header));
 	// clear log (Restriction: no txn concurrency)
@@ -93,10 +96,17 @@ void nvtxn_recover(struct nvl_header *nvlh) {
 		d = (struct nvtxn_record_header *)data;
 		char *addr;
 		if (d->op == NV_HEAP_DATA) {
+			// NOTE: NOT USED
 			struct nvp_t tmp = nvp_parse(d);
 			addr = nvalloc_getnvp(&tmp);
 			addr += d->offset;
 			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
+		} else if (d->op == NVHT_PUT_NEW) {
+			// set bucket to 0, i.e. marking it empty
+			struct nvp_t tmp = nvp_parse(d);
+			addr = get_nvp(&tmp);
+			addr += d->offset;
+			memset(addr, 0, d->dsize);
 		} else if (d->op == NVHT_HEADER || d->op == NVHT_PUT || d->op == NVHT_REMOVE ||
 				d->op == NV_HEAP_BITMAP_UPDATE || d->op == NV_DATASET) {
 			struct nvp_t tmp = nvp_parse(d);
@@ -104,9 +114,7 @@ void nvtxn_recover(struct nvl_header *nvlh) {
 			addr += d->offset;
 			memcpy(addr, data + sizeof(struct nvtxn_record_header), d->dsize);
 		} else if (d->op == NV_HEAP_POOL_UPDATE) {
-//			struct nvp_t tmp = nvp_parse(d);
-//			addr = get_nvp(&tmp);
-//			addr += d->offset;
+			// nvalloc_malloc & nvalloc_free
 #ifdef USEPOOL
 			struct pool_txn_record_t *pooldata = (struct pool_txn_record_t *)(data + sizeof(struct nvtxn_record_header));
 			pool_tree_recovery(pooldata);
@@ -118,6 +126,7 @@ void nvtxn_recover(struct nvl_header *nvlh) {
 #endif
 		} else if (d->op == NV_ALLOC) {
 			// free nvid
+			// used in rehash
 			int nvid = d->nvp.nvid;
 			nv_remove(nvid);
 		} else if (d->op == NV_FREE) {
