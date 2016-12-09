@@ -19,8 +19,22 @@ long long ustime(void) {
 
 const char *db_home_dir = "./envdir";
 const char *file_name = "testdb.db";
-#define KEYSTR "test-key-[%d]"
-#define VALUESTR "test-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-value-[%d]"
+char *KEYSTR = NULL;
+char *VALUESTR = NULL;
+
+void gen_templ(int keylen, int valuelen) {
+	KEYSTR = malloc(keylen * sizeof(char));
+	VALUESTR = malloc(valuelen * sizeof(char));
+	int i;
+	for (i=4; i<keylen; ++i) {
+		KEYSTR[i] = i%26 + 'a';
+	}
+	for (i=4; i<valuelen; ++i) {
+		VALUESTR[i] = i%26 + 'a';
+	}
+	memcpy(KEYSTR, "[%d]", 4);
+	memcpy(VALUESTR, "[%d]", 4);
+}
 
 void test_insert(int count, int type) {
     int i;
@@ -64,7 +78,8 @@ void test_insert(int count, int type) {
         // ret = txn->commit(txn, 0);
     }
     t2 = ustime();
-    printf("%s time diff %lld\n", __func__,  t2 - t1);
+    //printf("%s time diff %lld\n", __func__,  t2 - t1);
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -128,7 +143,8 @@ void test_insertr(int count, int type) {
         --j;
     }
     t2 = ustime();
-    printf("%s time diff %lld\n", __func__,  t2 - t1);
+    //printf("%s time diff %lld\n", __func__,  t2 - t1);
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -176,7 +192,7 @@ void test_search(int count, int type) {
         // ret = txn->commit(txn, 0);
     }
     t2 = ustime();
-    printf("%s time diff %lld\n", __func__,  t2 - t1);
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -232,7 +248,7 @@ void test_searchr(int count, int type) {
         --j;
     }
     t2 = ustime();
-    printf("%s time diff %lld\n", __func__,  t2 - t1);
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -278,7 +294,7 @@ void test_del(int count, int type) {
         // ret = txn->commit(txn, 0);
     }
     t2 = ustime();
-    printf("%s time diff %lld\n", __func__,  t2 - t1);
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -289,12 +305,13 @@ void test_del(int count, int type) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 4) {
+    if (argc < 6) {
         return -1;
     }
     int count = atoi(argv[2]);
     int type = atoi(argv[3]); /*1 btree 2 linear hash*/
     printf("count %d\n", count);
+    gen_templ(atoi(argv[4]), atoi(argv[5]));
     if (strcmp(argv[1], "insert")==0) {
         test_insert(count, type);
     } else if (strcmp(argv[1], "insertr")==0) {
@@ -310,5 +327,11 @@ int main(int argc, char *argv[]) {
     } else {
         printf("No test for %s\n", argv[1]);
     }
+	if (KEYSTR != NULL) {
+		free(KEYSTR);
+	}
+	if (VALUESTR != NULL) {
+		free(VALUESTR);
+	}
     return 0;
 }

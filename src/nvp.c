@@ -389,7 +389,7 @@ struct nvp_t nvalloc_malloc(struct nvtxn_info *txn, int size) {
 	}
 	for (i=PARENT(index); i>0; i=PARENT(i)) {
 		int tmp = MAX(wear_leveling_mgr[LEFT_LEAF(i)], wear_leveling_mgr[RIGHT_LEAF(i)]);
-		if (wear_leveling_mgr[i] == tmp)
+		if (wear_leveling_mgr[i] >= tmp)
 			break;
 		wear_leveling_mgr[i] = tmp;
 	}

@@ -222,12 +222,14 @@ int random_nvid() {
 	return r;
 }
 
-int random_txnid() {
-	if (dosrand == 0) {
-		dosrand = 1;
-		srand(time(NULL));
-	}
-	return rand() % 10000;
+static int txnid = 12345;
+inline int random_txnid() {
+	return txnid++;
+//	if (dosrand == 0) {
+//		dosrand = 1;
+//		srand(time(NULL));
+//	}
+//	return rand() % 10000;
 }
 
 long long ustime(void) {

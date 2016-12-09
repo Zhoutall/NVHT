@@ -9,8 +9,25 @@
 #define ID1 1345
 #define ID2 5785
 
-#define KEYSTR "test-key-[%d]"
-#define VALUESTR "test-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-value-[%d]"
+//#define KEYSTR "test-key-[%d]"
+//#define VALUESTR "test-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-value-[%d]"
+
+char *KEYSTR = NULL;
+char *VALUESTR = NULL;
+
+void gen_templ(int keylen, int valuelen) {
+	KEYSTR = malloc(keylen * sizeof(char));
+	VALUESTR = malloc(valuelen * sizeof(char));
+	int i;
+	for (i=4; i<keylen; ++i) {
+		KEYSTR[i] = i%26 + 'a';
+	}
+	for (i=4; i<valuelen; ++i) {
+		VALUESTR[i] = i%26 + 'a';
+	}
+	memcpy(KEYSTR, "[%d]", 4);
+	memcpy(VALUESTR, "[%d]", 4);
+}
 
 void test_insert(int count) {
 	int i;
@@ -27,7 +44,7 @@ void test_insert(int count) {
 		nvht_put(h, k, strlen(k) + 1, v, strlen(v) + 1);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__,  t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 }
 
 void test_insertr(int count) {
@@ -51,7 +68,8 @@ void test_insertr(int count) {
 		--j;
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__,  t2 - t1);
+	//printf("%s time diff %lld\n", __func__,  t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 }
 
 void test_search(int count) {
@@ -68,7 +86,8 @@ void test_search(int count) {
 		nvht_get(h, k, strlen(k) + 1, &v);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__, t2 - t1);
+	//printf("%s time diff %lld\n", __func__, t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 }
 
 void test_searchr(int count) {
@@ -91,7 +110,8 @@ void test_searchr(int count) {
 		--j;
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__,  t2 - t1);
+	//printf("%s time diff %lld\n", __func__,  t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 }
 
 void test_del(int count) {
@@ -107,7 +127,8 @@ void test_del(int count) {
 		nvht_remove(h, k, strlen(k) + 1);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__, t2 - t1);
+	//printf("%s time diff %lld\n", __func__, t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
 }
 
 void clean() {
@@ -120,12 +141,14 @@ void clean() {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc < 3) {
+	if (argc < 5) {
+		// <op> count keylen valuelen
 		clean();
 		return -1;
 	}
 	int count = atoi(argv[2]);
 	printf("count %d\n", count);
+	gen_templ(atoi(argv[3]), atoi(argv[4]));
 	if (strcmp(argv[1], "insert")==0) {
 		test_insert(count);
 		clean();
@@ -142,6 +165,12 @@ int main(int argc, char *argv[]) {
 		test_del(count);
 	} else {
 		printf("No test for %s\n", argv[1]);
+	}
+	if (KEYSTR != NULL) {
+		free(KEYSTR);
+	}
+	if (VALUESTR != NULL) {
+		free(VALUESTR);
 	}
 	return 0;
 }

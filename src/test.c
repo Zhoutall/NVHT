@@ -161,7 +161,7 @@ void nvht_test1() {
 	// try put many data
 	int i=0;
 	long long t1 = ustime();
-	while (++i < 1000) {
+	while (++i < 10000) {
 		char k[20];
 		char v[20];
 		sprintf(k, "nv key %d", i);
@@ -173,7 +173,7 @@ void nvht_test1() {
 	printf("--------\n");
 	i = 0;
 	t1 = ustime();
-	while (++i < 1000) {
+	while (++i < 10000) {
 		char k[20];
 		char *v;
 		sprintf(k, "nv key %d", i);
@@ -189,7 +189,7 @@ void nvht_test2() {
 	NVHT *h = nvht_init(99881);
 	int i = 0;
 	long long t1 = ustime();
-	while (++i < 1000) {
+	while (++i < 10000) {
 		char k[20];
 		char *v;
 		sprintf(k, "nv key %d", i);

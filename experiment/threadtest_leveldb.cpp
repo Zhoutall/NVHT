@@ -17,12 +17,26 @@ long long ustime(void) {
 }
 
 #define MAXTHREADNUM 20
-#define TOTAL 1000000
-#define TOTALWRITE 300000
-#define TOTALSEARCH 700000
+#define TOTAL (1000000)
+#define TOTALWRITE (300000)
+#define TOTALSEARCH (TOTAL-TOTALWRITE)
 
-#define KEYSTR "test-key-[%d]"
-#define VALUESTR "test-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-valuetest-value-[%d]"
+char *KEYSTR = NULL;
+char *VALUESTR = NULL;
+
+void gen_templ(int keylen, int valuelen) {
+	KEYSTR = malloc(keylen * sizeof(char));
+	VALUESTR = malloc(valuelen * sizeof(char));
+	int i;
+	for (i=4; i<keylen; ++i) {
+		KEYSTR[i] = i%26 + 'a';
+	}
+	for (i=4; i<valuelen; ++i) {
+		VALUESTR[i] = i%26 + 'a';
+	}
+	memcpy(KEYSTR, "[%d]", 4);
+	memcpy(VALUESTR, "[%d]", 4);
+}
 
 //pthread_mutex_t m;
 int thread_num;
@@ -73,7 +87,7 @@ void thread_insert() {
 		pthread_join(threads[i], &status);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__, t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t1-t2));
 //	pthread_mutex_destroy(&m);
 	delete db;
 }
@@ -132,7 +146,7 @@ void thread_hybrid() {
 		pthread_join(threads[i], &status);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld\n", __func__, t2 - t1);
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t1-t2));
 //	pthread_mutex_destroy(&m);
 	delete db;
 }
@@ -141,16 +155,23 @@ void thread_hybrid() {
  * insert <thread number>
  */
 int main(int argc, char *argv[]) {
-	if (argc < 3) {
+	if (argc < 5) {
 		return -1;
 	}
 	thread_num = atoi(argv[2]);
+	gen_templ(atoi(argv[3]), atoi(argv[4]));
 	if (strcmp(argv[1], "insert") == 0) {
 		thread_insert();
 	} else if (strcmp(argv[1], "hybrid") == 0) {
 		thread_hybrid();
 	} else {
 		printf("no test for %s\n", argv[1]);
+	}
+	if (KEYSTR != NULL) {
+		free(KEYSTR);
+	}
+	if (VALUESTR != NULL) {
+		free(VALUESTR);
 	}
 	return 0;
 }

@@ -5,7 +5,7 @@
 #include "nvp.h"
 #include "nvsim.h"
 
-static int get_nvlogger_size(struct nvl_header *h) {
+static inline int get_nvlogger_size(struct nvl_header *h) {
 	return h->size + sizeof(struct nvl_header);
 }
 
