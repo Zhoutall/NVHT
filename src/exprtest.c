@@ -44,7 +44,7 @@ void test_insert(int count) {
 		nvht_put(h, k, strlen(k) + 1, v, strlen(v) + 1);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 }
 
 void test_insertr(int count) {
@@ -69,7 +69,7 @@ void test_insertr(int count) {
 	}
 	t2 = ustime();
 	//printf("%s time diff %lld\n", __func__,  t2 - t1);
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 }
 
 void test_search(int count) {
@@ -87,7 +87,7 @@ void test_search(int count) {
 	}
 	t2 = ustime();
 	//printf("%s time diff %lld\n", __func__, t2 - t1);
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 }
 
 void test_searchr(int count) {
@@ -111,7 +111,7 @@ void test_searchr(int count) {
 	}
 	t2 = ustime();
 	//printf("%s time diff %lld\n", __func__,  t2 - t1);
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 }
 
 void test_del(int count) {
@@ -128,7 +128,7 @@ void test_del(int count) {
 	}
 	t2 = ustime();
 	//printf("%s time diff %lld\n", __func__, t2 - t1);
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 }
 
 void clean() {

@@ -14,10 +14,11 @@ static inline int nvht_elem_size(int capacity) {
 }
 
 static struct nvp_t gen_nvht_nvp(int nvid) {
-	struct nvp_t ret;
-	ret.nvid = nvid;
-	ret.nvoffset = 0; // no offset for nvht memory
-	ret.size = NVHT_HEADER_SIZE;
+	struct nvp_t ret = {
+		.nvid = nvid,
+		.nvoffset = 0,
+		.size = NVHT_HEADER_SIZE,
+	};
 	return ret;
 }
 

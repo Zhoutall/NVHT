@@ -107,7 +107,7 @@ void thread_insert() {
 		pthread_join(threads[i], &status);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t2-t1));
 	pthread_spin_destroy(&m);
 	if (dbp != NULL) {
 		ret = dbp->close(dbp, 0);
@@ -194,7 +194,7 @@ void thread_hybrid() {
 		pthread_join(threads[i], &status);
 	}
 	t2 = ustime();
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t2-t1));
 	pthread_spin_destroy(&m);
 	if (dbp != NULL) {
 		ret = dbp->close(dbp, 0);

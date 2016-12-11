@@ -9,6 +9,8 @@ static inline int get_nvlogger_size(struct nvl_header *h) {
 	return h->size + sizeof(struct nvl_header);
 }
 
+static struct nvl_header *snvlh = NULL;
+
 int nvl_header_valid(struct nvl_header *h) {
 	return h->magic0 == NVLOGGER_MAGIC_0;
 }
@@ -17,6 +19,7 @@ struct nvl_header *nvl_get(int nvid, int size) {
 	if (size < NVLOGGER_DEFAULT_SIZE) {
 		size = NVLOGGER_DEFAULT_SIZE;
 	}
+	if (snvlh != NULL) return snvlh;
 	struct nvl_header *nvlogger_addr;
 	if (nv_exist(nvid) != -1) {
 		nvlogger_addr = nvpcache_search(nvid);
@@ -31,6 +34,7 @@ struct nvl_header *nvl_get(int nvid, int size) {
 			nvlogger_addr->w_offset = 0;
 			nvlogger_addr->magic0 = NVLOGGER_MAGIC_0;
 		}
+		snvlh = nvlogger_addr;
 		return nvlogger_addr;
 	}
 
@@ -39,6 +43,7 @@ struct nvl_header *nvl_get(int nvid, int size) {
 	nvlogger_addr->size = size - sizeof(struct nvl_header);
 	nvlogger_addr->w_offset = 0;
 	nvlogger_addr->magic0 = NVLOGGER_MAGIC_0;
+	snvlh = nvlogger_addr;
 	return nvlogger_addr;
 }
 

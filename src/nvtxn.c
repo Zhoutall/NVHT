@@ -17,7 +17,7 @@ static struct nvp_t nvp_parse(struct nvtxn_record_header *h) {
 
 struct nvtxn_info nvtxn_start(struct nvl_header *nvlh) {
 	// check nvl_header valid
-	if (!nvl_header_valid(nvlh)) {
+	if (nvlh->magic0 != NVLOGGER_MAGIC_0) {
 		printf("NVLOGGER header magic number error\n");
 		exit(EXIT_FAILURE);
 	}

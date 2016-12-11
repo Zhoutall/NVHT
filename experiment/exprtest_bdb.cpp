@@ -79,7 +79,7 @@ void test_insert(int count, int type) {
     }
     t2 = ustime();
     //printf("%s time diff %lld\n", __func__,  t2 - t1);
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -144,7 +144,7 @@ void test_insertr(int count, int type) {
     }
     t2 = ustime();
     //printf("%s time diff %lld\n", __func__,  t2 - t1);
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -192,7 +192,7 @@ void test_search(int count, int type) {
         // ret = txn->commit(txn, 0);
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -248,7 +248,7 @@ void test_searchr(int count, int type) {
         --j;
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);
@@ -294,7 +294,7 @@ void test_del(int count, int type) {
         // ret = txn->commit(txn, 0);
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
 
     if (dbp != NULL) {
         ret_c = dbp->close(dbp, 0);

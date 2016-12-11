@@ -92,7 +92,7 @@ void test_insert(int count) {
         s = db->Put(write_options, k, v);
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
     delete db;
 }
 
@@ -127,7 +127,7 @@ void test_insertr(int count) {
         --j;
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
     delete db;
 }
 
@@ -152,7 +152,7 @@ void test_search(int count) {
         s = db->Get(leveldb::ReadOptions(), k, &v);
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
     delete db;
     // delete options.block_cache;
 }
@@ -183,7 +183,7 @@ void test_searchr(int count) {
         --j;
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
     delete db;
 }
 
@@ -209,7 +209,7 @@ void test_del(int count) {
         s = db->Delete(write_options, k);
     }
     t2 = ustime();
-    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t1-t2));
+    printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, count*1000000.0/(t2-t1));
     delete db;
 }
 

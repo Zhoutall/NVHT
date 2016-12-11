@@ -73,7 +73,7 @@ void thread_insert() {
 	}
 	t2 = ustime();
 	//printf("%s time diff %lld\n", __func__, t2 - t1);
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t2-t1));
 }
 
 void *hybrid(void *arg) {
@@ -123,7 +123,7 @@ void thread_hybrid() {
 	}
 	t2 = ustime();
 	//printf("%s time diff %lld\n", __func__, t2 - t1);
-	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t1-t2));
+	printf("%s time diff %lld, qps %f\n", __func__,  t2 - t1, TOTAL*1000000.0/(t2-t1));
 }
 
 void clean() {
