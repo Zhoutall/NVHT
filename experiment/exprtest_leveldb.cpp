@@ -85,7 +85,7 @@ void test_insert(int count) {
     i = 0;
     t1 = ustime();
     while(i++ < count) {
-        char k[30];
+        char k[200];
         char v[200];
         sprintf(k, KEYSTR, i);
         sprintf(v, VALUESTR, i);
@@ -114,7 +114,7 @@ void test_insertr(int count) {
     i = 0, j=count-1;
     t1 = ustime();
     while(i<j) {
-        char k[30];
+        char k[200];
         char v[200];
         sprintf(k, KEYSTR, i);
         sprintf(v, VALUESTR, i);
@@ -146,7 +146,7 @@ void test_search(int count) {
     i = 0;
     t1 = ustime();
     while(i++ < count) {
-        char k[30];
+        char k[200];
         string v;
         sprintf(k, KEYSTR, i);
         s = db->Get(leveldb::ReadOptions(), k, &v);
@@ -172,7 +172,7 @@ void test_searchr(int count) {
     i = 0, j=count-1;
     t1 = ustime();
     while(i < j) {
-        char k[30];
+        char k[200];
         string v1, v2;
         sprintf(k, KEYSTR, i);
         s = db->Get(leveldb::ReadOptions(), k, &v1);
@@ -204,7 +204,7 @@ void test_del(int count) {
     i = 0;
     t1 = ustime();
     while(i++ < count) {
-        char k[30];
+        char k[200];
         sprintf(k, KEYSTR, i);
         s = db->Delete(write_options, k);
     }

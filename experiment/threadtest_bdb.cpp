@@ -58,7 +58,7 @@ void *insert(void *arg) {
 	printf("Thread %ld %d-%d\n", pos, start, end);
 	i = start;
 	while (i++ < end) {
-		char k[30];
+		char k[200];
 		char v[200];
 		sprintf(k, KEYSTR, i);
 		sprintf(v, VALUESTR, i);
@@ -127,7 +127,7 @@ void *hybrid(void *arg) {
 	printf("Thread %ld write %d-%d\n", pos, start, end);
 	i = start;
 	while (i++ < end) {
-		char k[30];
+		char k[200];
 		char v[200];
 		sprintf(k, KEYSTR, i);
 		sprintf(v, VALUESTR, i);
@@ -152,7 +152,7 @@ retry:
 	printf("Thread %ld search %d-%d\n", pos, start, end);
 	i = start;
 	while (i++ < end) {
-		char k[30];
+		char k[200];
 		char v[200];
 		sprintf(k, KEYSTR, i % TOTALWRITE);
 		memset(&key, 0, sizeof(DBT));

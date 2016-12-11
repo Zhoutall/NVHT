@@ -47,7 +47,7 @@ void *insert(void *arg) {
 	printf("Thread %d %d-%d\n", pos, start, end);
 	i = start;
 	while (i++ < end) {
-		char k[30];
+		char k[200];
 		char v[200];
 		sprintf(k, KEYSTR, i);
 		sprintf(v, VALUESTR, i);
@@ -85,7 +85,7 @@ void *hybrid(void *arg) {
 	printf("Thread %d write %d-%d\n", pos, start, end);
 	i = start;
 	while (i++ < end) {
-		char k[30];
+		char k[200];
 		char v[200];
 		sprintf(k, KEYSTR, i);
 		sprintf(v, VALUESTR, i);
@@ -97,7 +97,7 @@ void *hybrid(void *arg) {
 	printf("Thread %d search %d-%d\n", pos, start, end);
 	i = start;
 	while (i++ < end) {
-		char k[30];
+		char k[200];
 		char v;
 		sprintf(k, KEYSTR, i % TOTALWRITE);
 		nvht_get(h, k, strlen(k) + 1, &v);

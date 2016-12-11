@@ -62,7 +62,7 @@ void test_insert(int count, int type) {
     i = 0;
     t1 = ustime();
     while(i++ < count) {
-        char k[30];
+        char k[200];
         char v[200];
         sprintf(k, KEYSTR, i);
         sprintf(v, VALUESTR, i);
@@ -115,7 +115,7 @@ void test_insertr(int count, int type) {
     i = 0, j=count-1;
     t1 = ustime();
     while(i<j) {
-        char k[30];
+        char k[200];
         char v[200];
         sprintf(k, KEYSTR, i);
         sprintf(v, VALUESTR, i);
@@ -180,7 +180,7 @@ void test_search(int count, int type) {
     i = 0;
     t1 = ustime();
     while(i++ < count) {
-        char k[30];
+        char k[200];
         char v[200];
         sprintf(k, KEYSTR, i);
         memset(&key, 0, sizeof(DBT));
@@ -228,7 +228,7 @@ void test_searchr(int count, int type) {
     i = 0, j=count-1;
     t1 = ustime();
     while(i<j) {
-        char k[30];
+        char k[200];
         char v[200];
         sprintf(k, KEYSTR, i);
         memset(&key, 0, sizeof(DBT));
@@ -284,7 +284,7 @@ void test_del(int count, int type) {
     i = 0;
     t1 = ustime();
     while(i++ < count) {
-        char k[30];
+        char k[200];
         sprintf(k, KEYSTR, i);
         memset(&key, 0, sizeof(DBT));
         key.data = &k;
