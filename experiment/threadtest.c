@@ -22,8 +22,8 @@ char *KEYSTR = NULL;
 char *VALUESTR = NULL;
 
 void gen_templ(int keylen, int valuelen) {
-	KEYSTR = malloc(keylen * sizeof(char));
-	VALUESTR = malloc(valuelen * sizeof(char));
+	KEYSTR = (char *)malloc(keylen * sizeof(char));
+	VALUESTR = (char *)malloc(valuelen * sizeof(char));
 	int i;
 	for (i=4; i<keylen; ++i) {
 		KEYSTR[i] = i%26 + 'a';
