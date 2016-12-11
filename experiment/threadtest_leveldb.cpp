@@ -17,9 +17,9 @@ long long ustime(void) {
 }
 
 #define MAXTHREADNUM 20
-#define TOTAL (1000000)
-#define TOTALWRITE (300000)
-#define TOTALSEARCH (TOTAL-TOTALWRITE)
+int TOTAL = 1000000;
+int TOTALWRITE = 300000;
+int TOTALSEARCH = 700000;
 
 char *KEYSTR = NULL;
 char *VALUESTR = NULL;
@@ -155,11 +155,14 @@ void thread_hybrid() {
  * insert <thread number>
  */
 int main(int argc, char *argv[]) {
-	if (argc < 5) {
+	if (argc < 6) {
 		return -1;
 	}
 	thread_num = atoi(argv[2]);
 	gen_templ(atoi(argv[3]), atoi(argv[4]));
+	int percent = atoi(argv[5]);
+	TOTALWRITE = TOTAL * percent / 100;
+	TOTALSEARCH = TOTAL-TOTALWRITE;
 	if (strcmp(argv[1], "insert") == 0) {
 		thread_insert();
 	} else if (strcmp(argv[1], "hybrid") == 0) {

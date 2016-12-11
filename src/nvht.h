@@ -16,7 +16,7 @@
 #define MAX_LOAD_FACTOR (0.8)
 
 #define NVHT_HEADER_SIZE 4096
-#define INIT_CAPACITY 4096
+#define INIT_CAPACITY 8192
 
 struct nvht_element {
 	struct nvp_t key;
