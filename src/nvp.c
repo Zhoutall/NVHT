@@ -381,17 +381,19 @@ struct nvp_t nvalloc_malloc(struct nvtxn_info *txn, int size) {
 	 * update wear-leveling info
 	 * */
 	int i;
-	for (i=PARENT(index); i>0; i=PARENT(i)) {
+	for (i=PARENT(index); i>=0; i=PARENT(i)) {
 		int tmp = MAX(p->longest[LEFT_LEAF(i)], p->longest[RIGHT_LEAF(i)]);
 		if (p->longest[i] == tmp)
 			break;
 		p->longest[i] = tmp;
+		if (i==0) break;
 	}
-	for (i=PARENT(index); i>0; i=PARENT(i)) {
+	for (i=PARENT(index); i>=0; i=PARENT(i)) {
 		int tmp = MAX(wear_leveling_mgr[LEFT_LEAF(i)], wear_leveling_mgr[RIGHT_LEAF(i)]);
 		if (wear_leveling_mgr[i] >= tmp)
 			break;
 		wear_leveling_mgr[i] = tmp;
+		if (i==0) break;
 	}
 
 	// return nvp
